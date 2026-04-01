@@ -7,7 +7,7 @@ import { NeuroclawEngine } from "../engine";
 describe("NeuroClaw Integration — full init + search flow", () => {
   let tmpDir: string;
   let configDir: string;
-  let engine: NeuroclawEngine;
+  let engine: NeuroclawEngine | undefined;
 
   beforeEach(async () => {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "neuroclaw-integration-"));
@@ -31,7 +31,7 @@ governance:
   });
 
   afterEach(() => {
-    engine.close();
+    engine?.close();
     fs.rmSync(tmpDir, { recursive: true, force: true });
   });
 
