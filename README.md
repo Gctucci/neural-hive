@@ -102,9 +102,9 @@ NeuroClaw builds on four influential projects and advances past each one's key l
 
 ## Who it's for
 
-**Claude Code users** — NeuroClaw persists your project conventions, past corrections, and preferences across sessions. Your agent stops asking what it already knows. Working memory is always in context. Everything lives in your `.claude/` directory — readable, editable, version-controllable.
+**Claude Code users** — Claude Code already writes memories between sessions. NeuroClaw adds what's missing: importance weighting based on emotional salience, a dream cycle that distills raw notes into structured knowledge, and a self-model that tracks what your agent knows about you — and updates it when outcomes prove it wrong. Your memory compounds instead of just growing.
 
-**OpenClaw users** — Full integration with AGENTS.md, SOUL.md, and HEARTBEAT.md. The dream cycle compounds your agent's skill at your specific workflows over time. Governed evolution means the agent updates its own self-model within boundaries you set — no silent personality drift.
+**OpenClaw users** — If you're already using auto-dream, NeuroClaw builds directly on that foundation with three meaningful upgrades: affect-weighted consolidation (frustration, breakthroughs, and corrections get prioritized over routine sessions), CLS-inspired replay during dream cycles (new knowledge is tested against existing knowledge before being committed, preventing gradual drift), and an outcome-grounded self-model that evolves your agent's beliefs about its own capabilities — with rollback when changes don't improve results.
 
 ---
 
