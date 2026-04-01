@@ -10,9 +10,11 @@ NeuroClaw gives [Claude](https://claude.ai) and [OpenClaw](https://github.com/op
 
 ## The problem
 
-Every session, your agent loses context. You re-explain your preferences. You repeat past corrections. It forgets what worked and what didn't. The more you use it, the more you wish it remembered — but it never does.
+Modern AI agents can store notes between sessions. Claude Code writes to memory files. OpenClaw uses AGENTS.md and SOUL.md. That's a start — but storage alone doesn't make an agent smarter.
 
-The model has the capability. The architecture has been the missing piece.
+Raw memory accumulates. It doesn't consolidate. It doesn't distinguish between what mattered and what didn't. It doesn't replay past experiences to strengthen useful patterns. It doesn't test whether a belief about you is still accurate. Over time, the memory grows — but the signal-to-noise ratio degrades, and the agent doesn't actually improve.
+
+The gap is between an agent that stores things and an agent that learns from them.
 
 ---
 
