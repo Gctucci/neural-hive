@@ -59,14 +59,14 @@ NeuroClaw builds on four influential projects and advances past each one's key l
 | **NeuroClaw** | Outcome-grounded evolution: identity changes are hypotheses, tested, and rolled back on regression |
 | **Why it matters** | Evolution without verification is drift. NeuroClaw only keeps changes that demonstrably improve performance |
 
-### [Honcho](https://github.com/plastic-labs/honcho) (Plastic Labs)
+### [Hermes Agent](https://github.com/nousresearch/hermes-agent) (Nous Research)
 
 | | |
 |---|---|
-| **Strengths** | Cloud-native memory reasoning, fine-tuned peer representation |
-| **Weakness** | SaaS dependency, opaque internals, no local-first option |
-| **NeuroClaw** | Local-first by default — memory lives on your machine as readable markdown. Optional Honcho sync for cloud reasoning on top |
-| **Why it matters** | Your agent's memory shouldn't live on someone else's server |
+| **Strengths** | Full learning loop, autonomous skill creation from experience, FTS5 session search, multi-platform, model-agnostic |
+| **Weakness** | Memory is accumulated but never distilled — no consolidation mechanism, no principled episodic/semantic/procedural separation, no structured self-model |
+| **NeuroClaw** | Principled memory architecture with dream-cycle consolidation, CLS replay, and a governed self-model with hypothesis-tested evolution |
+| **Why it matters** | Accumulating memories indefinitely creates noise. Without consolidation, the signal-to-noise ratio degrades over time — and the agent gets slower, not smarter |
 
 ---
 
