@@ -30,6 +30,31 @@ The result: an agent that doesn't just remember the past — it learns from it. 
 
 ---
 
+## How it works
+
+```mermaid
+flowchart TD
+    A([Session starts]) --> B[Inject working memory\ninto agent context]
+    B --> C[Agent responds using\nretrieved memories + knowledge]
+    C --> D[Capture episode\nwith valence & arousal scores]
+    D --> E{Dream cycle\ntriggered?}
+    E -- No --> F[Store raw episode\nin vault]
+    F --> A
+    E -- Yes --> G[CLS Replay\nTest episodes against\nsemantic store]
+    G --> H{Novel knowledge?}
+    H -- Confirms existing → strengthen
+    H -- Contradicts existing → flag for hypothesis
+    H -- Genuinely new → create semantic entry
+    H --> I[Update importance scores\nand knowledge graph]
+    I --> J[Update self-model\nCapabilities · Preferences · Hypotheses]
+    J --> K{Outcome better\nthan before?}
+    K -- Yes → keep evolution
+    K -- No → rollback change
+    K --> A
+```
+
+---
+
 ## The three systems
 
 **Memory** — a markdown vault backed by SQLite + FTS5. Sessions are captured as episodes. Knowledge is distilled into semantic entries by domain. Procedures become reusable patterns. A `working.md` file is always in context — your agent's live scratchpad across sessions.
