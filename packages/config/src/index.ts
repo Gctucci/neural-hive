@@ -1,0 +1,2 @@
+// @neuroclaw/config
+export {};

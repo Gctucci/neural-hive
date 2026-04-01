@@ -1,0 +1,24 @@
+{
+  "name": "@neuroclaw/core",
+  "version": "0.1.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "neuroclaw": "bin/neuroclaw.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@neuroclaw/config": "0.1.0",
+    "@neuroclaw/memory": "0.1.0",
+    "@neuroclaw/governance": "0.1.0",
+    "commander": "^13.1.0"
+  },
+  "devDependencies": {
+    "vitest": "^3.1.0",
+    "typescript": "^5.7.0"
+  }
+}

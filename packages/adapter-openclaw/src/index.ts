@@ -1,0 +1,2 @@
+// @neuroclaw/adapter-openclaw
+export {};

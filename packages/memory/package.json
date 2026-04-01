@@ -1,0 +1,21 @@
+{
+  "name": "@neuroclaw/memory",
+  "version": "0.1.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.8.0",
+    "@neuroclaw/config": "0.1.0",
+    "@neuroclaw/governance": "0.1.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "vitest": "^3.1.0",
+    "typescript": "^5.7.0"
+  }
+}
