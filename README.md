@@ -71,19 +71,41 @@ node packages/core/bin/neuroclaw.js status
 
 Several projects have tackled AI agent memory before. NeuroClaw builds on all of them and advances past each one's key limitation:
 
-| Prior work | What it got right | What it missed |
-|---|---|---|
-| **self-improving** (ivangdavila) | Correction logging, promotion heuristics | Flat importance (just repetition count), no emotional salience signal |
-| **auto-dream** (LeoYeAI) | File-based layered memory, dream consolidation | Linear forgetting (age threshold), no replay mechanism — vulnerable to catastrophic forgetting |
-| **EvoClaw** (slhleosun) | Identity evolution via heartbeat | No feedback loop — mutations aren't tested against whether they actually improved outcomes |
-| **Honcho** (Plastic Labs) | Cloud-native memory reasoning, peer representation | SaaS dependency, opaque internals, no local-first option |
+### self-improving (ivangdavila)
 
-NeuroClaw's advances:
+| | |
+|---|---|
+| **Strengths** | Correction logging, manual promotion heuristics (the 3x rule) |
+| **Weakness** | Flat importance scoring based purely on repetition count — no signal for emotional salience or session significance |
+| **NeuroClaw** | Valence-weighted consolidation: emotional salience (frustration, surprise, satisfaction) modulates what gets remembered and how strongly |
+| **Why it matters** | One session where the agent was corrected is more valuable than ten routine ones. Counting repetitions misses this entirely |
 
-- **Valence-weighted memory** — emotional salience (frustration, surprise, satisfaction) modulates what gets consolidated. A session where something went wrong is prioritized over routine repetition.
-- **CLS replay** — inspired by Complementary Learning Systems theory (McClelland & O'Reilly), episodes are replayed against the semantic store during dream cycles. This is how the brain avoids catastrophic forgetting: interleave the old with the new.
-- **Outcome-grounded evolution** — self-model mutations are hypothesis-tested against downstream task performance. If a capability belief turns out to be wrong, it rolls back.
-- **Local-first** — all memory and reasoning lives on your machine. No cloud dependency, no data leaving your environment. Representations are inspectable markdown files you can read and edit directly.
+### auto-dream (LeoYeAI)
+
+| | |
+|---|---|
+| **Strengths** | File-based 5-layer memory architecture, scheduled dream consolidation |
+| **Weakness** | Linear forgetting via age thresholds, no replay mechanism — new knowledge can silently overwrite old |
+| **NeuroClaw** | CLS-inspired interleaved replay: during dream cycles, new episodes are replayed against the existing semantic store before being committed |
+| **Why it matters** | Catastrophic forgetting is a real failure mode. The brain solves it with hippocampal replay during sleep — NeuroClaw applies the same principle |
+
+### EvoClaw (slhleosun)
+
+| | |
+|---|---|
+| **Strengths** | Structured identity evolution via heartbeat, SOUL.md |
+| **Weakness** | No feedback loop — self-model mutations aren't tested against whether they actually improved outcomes |
+| **NeuroClaw** | Outcome-grounded evolution: capability and identity changes are treated as hypotheses, tested against downstream task performance, and rolled back on regression |
+| **Why it matters** | Evolution without verification is just drift. NeuroClaw only keeps changes that demonstrably help |
+
+### Honcho (Plastic Labs)
+
+| | |
+|---|---|
+| **Strengths** | Cloud-native memory reasoning, fine-tuned peer representation models |
+| **Weakness** | SaaS dependency, opaque internals, representations aren't directly inspectable or editable |
+| **NeuroClaw** | Local-first by default: all memory lives on your machine as readable markdown files. Optional Honcho sync available for users who want cloud-backed reasoning on top |
+| **Why it matters** | Your agent's memory shouldn't live on someone else's server. Local-first means you own it, can audit it, version it, and export it |
 
 ## Benefits for Claude Code and OpenClaw users
 
