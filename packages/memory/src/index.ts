@@ -1,2 +1,2 @@
 // @neuroclaw/memory
-export {};
+export { Vault } from "./vault";
