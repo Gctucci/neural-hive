@@ -4,7 +4,7 @@
 
 NeuroClaw gives [Claude](https://claude.ai) and [OpenClaw](https://github.com/openclaw/openclaw) agents persistent memory, a self-model, and an autonomous improvement loop — grounded in neuroscience, affective computing, and psychology research — so they get measurably better with every session instead of starting from scratch.
 
-> Not a file system. Not a note-taker. A self-improving memory architecture built the way brains actually work.
+> A self-improving memory architecture built the way brains actually work.
 
 ---
 
@@ -12,7 +12,7 @@ NeuroClaw gives [Claude](https://claude.ai) and [OpenClaw](https://github.com/op
 
 Every session, your agent loses context. You re-explain your preferences. You repeat past corrections. It forgets what worked and what didn't. The more you use it, the more you wish it remembered — but it never does.
 
-This isn't a model limitation. It's an architecture gap. And it's fixable.
+The model has the capability. The architecture has been the missing piece.
 
 ---
 
