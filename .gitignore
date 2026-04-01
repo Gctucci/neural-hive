@@ -205,3 +205,18 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# NeuroClaw build artifacts
+node_modules/
+dist/
+*.tsbuildinfo
+
+# SQLite databases (user data, not committed)
+*.db
+*.db-wal
+*.db-shm
+
+# User config (generated, not committed)
+config/user.yaml
+config/platform.yaml
+config/agents/
