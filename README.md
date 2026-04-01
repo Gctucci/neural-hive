@@ -71,7 +71,7 @@ node packages/core/bin/neuroclaw.js status
 
 Several projects have tackled AI agent memory before. NeuroClaw builds on all of them and advances past each one's key limitation:
 
-### self-improving (ivangdavila)
+### [self-improving](https://clawhub.ai/ivangdavila/self-improving) (ivangdavila)
 
 | | |
 |---|---|
@@ -80,7 +80,7 @@ Several projects have tackled AI agent memory before. NeuroClaw builds on all of
 | **NeuroClaw** | Valence-weighted consolidation: emotional salience (frustration, surprise, satisfaction) modulates what gets remembered and how strongly |
 | **Why it matters** | One session where the agent was corrected is more valuable than ten routine ones. Counting repetitions misses this entirely |
 
-### auto-dream (LeoYeAI)
+### [auto-dream](https://github.com/LeoYeAI/openclaw-auto-dream) (LeoYeAI)
 
 | | |
 |---|---|
@@ -89,7 +89,7 @@ Several projects have tackled AI agent memory before. NeuroClaw builds on all of
 | **NeuroClaw** | CLS-inspired interleaved replay: during dream cycles, new episodes are replayed against the existing semantic store before being committed |
 | **Why it matters** | Catastrophic forgetting is a real failure mode. The brain solves it with hippocampal replay during sleep — NeuroClaw applies the same principle |
 
-### EvoClaw (slhleosun)
+### [EvoClaw](https://github.com/slhleosun/EvoClaw) (slhleosun)
 
 | | |
 |---|---|
@@ -98,7 +98,7 @@ Several projects have tackled AI agent memory before. NeuroClaw builds on all of
 | **NeuroClaw** | Outcome-grounded evolution: capability and identity changes are treated as hypotheses, tested against downstream task performance, and rolled back on regression |
 | **Why it matters** | Evolution without verification is just drift. NeuroClaw only keeps changes that demonstrably help |
 
-### Honcho (Plastic Labs)
+### [Honcho](https://github.com/plastic-labs/honcho) (Plastic Labs)
 
 | | |
 |---|---|
