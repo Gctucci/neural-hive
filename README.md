@@ -28,7 +28,7 @@ Most memory systems just store things. NeuroClaw applies three decades of cognit
 
 **From affective computing — Valence-arousal modulation:** Not all experiences are equally important. NeuroClaw scores every memory trace for emotional salience — frustration, surprise, satisfaction — and uses this signal to prioritize consolidation. A session where something went wrong gets remembered more strongly than ten routine ones. This is grounded in amygdala-modulated memory formation: emotionally significant events are encoded differently than neutral ones.
 
-**From psychology — Hypothesis-driven self-modeling:** Your agent maintains a structured self-model: what it knows, what it can do, and what it believes about your preferences. When outcomes contradict a belief, the belief is updated — not blindly, but through a governed hypothesis-testing cycle with rollback on regression. The agent evolves its own mental model of itself and you, continuously, based on evidence.
+**From psychology — Hypothesis-driven self-modeling:** Your agent builds a structured model of itself over time: a stable core identity, a map of what it knows it can and can't do, and a set of active beliefs about what works with you specifically. These beliefs are hypotheses — held tentatively, tested against outcomes, updated when evidence contradicts them. The agent doesn't just remember the past. It develops a sense of itself through it, proactively refining its understanding of its own capabilities and your preferences with every session.
 
 The result: an agent that doesn't just remember the past — it learns from it. Every session makes the next one better.
 
@@ -54,7 +54,7 @@ flowchart LR
 
 **Dream cycle** — after each session, NeuroClaw consolidates episodic traces into durable semantic memory via CLS-inspired interleaved replay. New knowledge is woven into the existing store, not appended on top of it.
 
-**Self-model** — a governed identity layer with capability tracking, behavioral hypotheses, and outcome-driven evolution. Your agent can update its own beliefs — within safety boundaries you control.
+**Self-model** — a structured identity with a stable core personality and an evolving layer that changes with experience. Your agent tracks what it can and can't do, holds beliefs about what works with you, and actively tests those beliefs against outcomes. Over time it discovers itself — what it's good at, where it falls short, and how to work better with you — within governance boundaries you control.
 
 ---
 
