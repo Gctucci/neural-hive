@@ -33,26 +33,13 @@ The result: an agent that doesn't just remember the past — it learns from it. 
 ## How it works
 
 ```mermaid
-flowchart TD
-    A([Session starts]) --> B[Inject working memory\ninto agent context]
-    B --> C[Agent responds using\nretrieved memories and knowledge]
-    C --> D[Capture episode\nwith valence and arousal scores]
-    D --> E{Dream cycle\ntriggered?}
-    E -- No --> F[Store raw episode\nin vault]
+flowchart LR
+    A([Session starts]) --> B[Working memory\ninjected into context]
+    B --> C[Agent acts\nand responds]
+    C --> D[Episode captured\nwith affect scores]
+    D --> E[Dream cycle\nCLS replay and consolidation]
+    E --> F[Self-model updated\nCapabilities and preferences]
     F --> A
-    E -- Yes --> G[CLS Replay\nTest episodes against\nsemantic store]
-    G --> H1[Confirms existing knowledge]
-    G --> H2[Contradicts existing knowledge]
-    G --> H3[Genuinely new knowledge]
-    H1 --> I[Strengthen existing entry]
-    H2 --> I2[Flag for hypothesis testing]
-    H3 --> I3[Create new semantic entry]
-    I & I2 & I3 --> J[Update importance scores\nand knowledge graph]
-    J --> K[Update self-model\nCapabilities, Preferences, Hypotheses]
-    K --> L{Outcome improved?}
-    L -- Yes --> A
-    L -- No --> M[Rollback change]
-    M --> A
 ```
 
 ---
