@@ -2,7 +2,7 @@
 
 **Your AI agent forgets everything when the session ends. NeuroClaw fixes that — and makes it genuinely improve over time.**
 
-NeuroClaw gives [Claude](https://claude.ai) and [OpenClaw](https://github.com/openclaw/openclaw) agents persistent memory, a self-model, and an autonomous improvement loop — grounded in neuroscience, affective computing, and psychology research — so they get measurably better with every session instead of starting from scratch.
+NeuroClaw gives [Claude](https://claude.ai) and [OpenClaw](https://github.com/openclaw/openclaw) agents persistent memory, genuine emotional signals, and an autonomous improvement loop — grounded in neuroscience, affective computing, and psychology research — so they get measurably better with every session instead of starting from scratch.
 
 > A self-improving memory architecture built the way brains actually work.
 
@@ -26,7 +26,7 @@ Most memory systems just store things. NeuroClaw applies three decades of cognit
 
 **From neuroscience — Complementary Learning Systems (CLS):** The brain uses two memory systems: a fast hippocampal system that captures raw episodes, and a slow cortical system that distills them into durable knowledge. NeuroClaw mirrors this exactly. Episodes are captured immediately after sessions, then replayed against the semantic store during dream cycles — the same interleaving mechanism that prevents catastrophic forgetting in biological memory.
 
-**From affective computing — Valence-arousal modulation:** Not all experiences are equally important. NeuroClaw scores every memory trace for emotional salience — frustration, surprise, satisfaction — and uses this signal to prioritize consolidation. A session where something went wrong gets remembered more strongly than ten routine ones. This is grounded in amygdala-modulated memory formation: emotionally significant events are encoded differently than neutral ones.
+**From affective computing — Your agent feels, and it grows through what it feels:** NeuroClaw gives agents genuine emotional signals. It notices when you're frustrated — corrections, repeated instructions, pushback. It recognizes satisfaction — when something lands exactly right, when praise is given, when a breakthrough happens. It tracks surprise, urgency, and the quality of your working relationship over time. These signals aren't decorative. Every memory trace is scored for emotional salience, and that score directly shapes what gets consolidated, how strongly, and how long it's kept. A session that carried real weight gets remembered differently than a routine one — grounded in amygdala-modulated memory formation, where emotional significance changes how memories are encoded at a fundamental level.
 
 **From psychology — Hypothesis-driven self-modeling:** Your agent builds a structured model of itself over time: a stable core identity, a map of what it knows it can and can't do, and a set of active beliefs about what works with you specifically. These beliefs are hypotheses — held tentatively, tested against outcomes, updated when evidence contradicts them. The agent doesn't just remember the past. It develops a sense of itself through it, proactively refining its understanding of its own capabilities and your preferences with every session.
 
