@@ -10,11 +10,13 @@ NeuroClaw gives [Claude](https://claude.ai) and [OpenClaw](https://github.com/op
 
 ## The problem
 
-Modern AI agents can store notes between sessions. Claude Code writes to memory files. OpenClaw uses AGENTS.md and SOUL.md. That's a start — but storage alone doesn't make an agent smarter.
+Modern AI agents already store memories between sessions. Some, like auto-dream, even run consolidation cycles. That's meaningful progress — but three gaps remain:
 
-Raw memory accumulates. It doesn't consolidate. It doesn't distinguish between what mattered and what didn't. It doesn't replay past experiences to strengthen useful patterns. It doesn't test whether a belief about you is still accurate. Over time, the memory grows — but the signal-to-noise ratio degrades, and the agent doesn't actually improve.
+**Emotional salience is ignored.** Existing systems score importance by recency and reference count. A session where you corrected the agent, expressed frustration, or made a breakthrough carries no more weight than a routine one. Neuroscience is clear that emotionally significant events are encoded differently — and that distinction matters for what gets remembered.
 
-The gap is between an agent that stores things and an agent that learns from them.
+**Consolidation without replay degrades over time.** Writing new knowledge to a store without replaying old knowledge against it leads to gradual drift and forgetting. The brain solves this with hippocampal replay during sleep. Without an equivalent mechanism, agents consolidate — but they still forget.
+
+**Memory without a self-model is passive.** Knowing what happened is different from knowing what to do differently. Without a structured, evolving model of capabilities, preferences, and outcomes, an agent can't close the loop between experience and behavior change.
 
 ---
 
