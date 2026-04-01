@@ -1,10 +1,10 @@
 # NeuroClaw
 
-**Your AI agent forgets everything when the session ends. NeuroClaw fixes that.**
+**Your AI agent forgets everything when the session ends. NeuroClaw fixes that — and makes it genuinely improve over time.**
 
-NeuroClaw gives [Claude](https://claude.ai) and [OpenClaw](https://github.com/openclaw/openclaw) agents persistent memory, a self-model, and a dream cycle — so they compound knowledge over time instead of starting from scratch every session.
+NeuroClaw gives [Claude](https://claude.ai) and [OpenClaw](https://github.com/openclaw/openclaw) agents persistent memory, a self-model, and an autonomous improvement loop — grounded in neuroscience, affective computing, and psychology research — so they get measurably better with every session instead of starting from scratch.
 
-> Not a file system. Not a note-taker. A neuroscience-grounded memory architecture that learns the way you do.
+> Not a file system. Not a note-taker. A self-improving memory architecture built the way brains actually work.
 
 ---
 
@@ -16,15 +16,27 @@ This isn't a model limitation. It's an architecture gap. And it's fixable.
 
 ---
 
-## What NeuroClaw does
+## How NeuroClaw makes your agent self-improve
 
-Three systems work together to make your agent genuinely smarter over time:
+Most memory systems just store things. NeuroClaw applies three decades of cognitive science research to make stored experience actually useful:
+
+**From neuroscience — Complementary Learning Systems (CLS):** The brain uses two memory systems: a fast hippocampal system that captures raw episodes, and a slow cortical system that distills them into durable knowledge. NeuroClaw mirrors this exactly. Episodes are captured immediately after sessions, then replayed against the semantic store during dream cycles — the same interleaving mechanism that prevents catastrophic forgetting in biological memory.
+
+**From affective computing — Valence-arousal modulation:** Not all experiences are equally important. NeuroClaw scores every memory trace for emotional salience — frustration, surprise, satisfaction — and uses this signal to prioritize consolidation. A session where something went wrong gets remembered more strongly than ten routine ones. This is grounded in amygdala-modulated memory formation: emotionally significant events are encoded differently than neutral ones.
+
+**From psychology — Hypothesis-driven self-modeling:** Your agent maintains a structured self-model: what it knows, what it can do, and what it believes about your preferences. When outcomes contradict a belief, the belief is updated — not blindly, but through a governed hypothesis-testing cycle with rollback on regression. The agent evolves its own mental model of itself and you, continuously, based on evidence.
+
+The result: an agent that doesn't just remember the past — it learns from it. Every session makes the next one better.
+
+---
+
+## The three systems
 
 **Memory** — a markdown vault backed by SQLite + FTS5. Sessions are captured as episodes. Knowledge is distilled into semantic entries by domain. Procedures become reusable patterns. A `working.md` file is always in context — your agent's live scratchpad across sessions.
 
-**Dream cycle** — after each session, NeuroClaw consolidates episodic traces into durable semantic memory. Inspired by how the brain uses sleep to integrate new knowledge without overwriting old. New things don't replace old things — they're woven in.
+**Dream cycle** — after each session, NeuroClaw consolidates episodic traces into durable semantic memory via CLS-inspired interleaved replay. New knowledge is woven into the existing store, not appended on top of it.
 
-**Self-model** — a governed identity layer. Your agent tracks what it knows, what it can do, and what it believes about your preferences. It can evolve these beliefs when outcomes prove them wrong — within safety boundaries you control.
+**Self-model** — a governed identity layer with capability tracking, behavioral hypotheses, and outcome-driven evolution. Your agent can update its own beliefs — within safety boundaries you control.
 
 ---
 
