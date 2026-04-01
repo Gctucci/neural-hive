@@ -22,6 +22,7 @@ export class NeuroclawEngine {
   }
 
   async init(): Promise<void> {
+    if (this.db) throw new Error("Engine already initialized");
     this.storePath = resolveStorePath(
       this.config.agent.store_path,
       this.config.agent.id

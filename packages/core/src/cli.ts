@@ -39,8 +39,9 @@ export function createCLI(): Command {
         const config = engine.getConfig();
         console.log(JSON.stringify(config, null, 2));
         engine.close();
-      } catch (err: any) {
-        console.error(`Error loading config: ${err.message}`);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error(`Error: ${msg}`);
         process.exit(1);
       }
     });
@@ -67,8 +68,9 @@ export function createCLI(): Command {
           }
         }
         engine.close();
-      } catch (err: any) {
-        console.error(`Error: ${err.message}`);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error(`Error: ${msg}`);
         process.exit(1);
       }
     });
@@ -88,8 +90,9 @@ export function createCLI(): Command {
         console.log(`Governance: ${engine.getGovernanceMode()}`);
         console.log("(Full health metrics will be implemented with dream cycle)");
         engine.close();
-      } catch (err: any) {
-        console.error(`Error: ${err.message}`);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error(`Error: ${msg}`);
         process.exit(1);
       }
     });
