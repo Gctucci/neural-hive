@@ -67,6 +67,38 @@ node packages/core/bin/neuroclaw.js status
 | 3 — Self-Model | ⬜ Planned | Structured identity, capability tracking, behavioral hypotheses, governed evolution |
 | 4 — Polish | ⬜ Planned | Health dashboard, cross-instance export/import, performance benchmarking |
 
+## Why NeuroClaw is different
+
+Several projects have tackled AI agent memory before. NeuroClaw builds on all of them and advances past each one's key limitation:
+
+| Prior work | What it got right | What it missed |
+|---|---|---|
+| **self-improving** (ivangdavila) | Correction logging, promotion heuristics | Flat importance (just repetition count), no emotional salience signal |
+| **auto-dream** (LeoYeAI) | File-based layered memory, dream consolidation | Linear forgetting (age threshold), no replay mechanism — vulnerable to catastrophic forgetting |
+| **EvoClaw** (slhleosun) | Identity evolution via heartbeat | No feedback loop — mutations aren't tested against whether they actually improved outcomes |
+| **Honcho** (Plastic Labs) | Cloud-native memory reasoning, peer representation | SaaS dependency, opaque internals, no local-first option |
+
+NeuroClaw's advances:
+
+- **Valence-weighted memory** — emotional salience (frustration, surprise, satisfaction) modulates what gets consolidated. A session where something went wrong is prioritized over routine repetition.
+- **CLS replay** — inspired by Complementary Learning Systems theory (McClelland & O'Reilly), episodes are replayed against the semantic store during dream cycles. This is how the brain avoids catastrophic forgetting: interleave the old with the new.
+- **Outcome-grounded evolution** — self-model mutations are hypothesis-tested against downstream task performance. If a capability belief turns out to be wrong, it rolls back.
+- **Local-first** — all memory and reasoning lives on your machine. No cloud dependency, no data leaving your environment. Representations are inspectable markdown files you can read and edit directly.
+
+## Benefits for Claude Code and OpenClaw users
+
+**If you use Claude Code:**
+- Your agent remembers your project's conventions, patterns, and preferences across sessions — without you repeating them every time
+- Corrections you give ("don't do X", "always use Y") get consolidated into semantic memory and surface automatically in future sessions
+- The working memory file (`working.md`) is always injected into context, giving your agent a persistent scratchpad that survives conversation resets
+- All memory is stored locally in your `.claude/` directory — readable, editable, version-controllable
+
+**If you use OpenClaw:**
+- Full integration with AGENTS.md, SOUL.md, and HEARTBEAT.md platform primitives
+- The dream cycle runs between sessions to distill episodic traces into durable knowledge — your agent's skill at your specific workflows compounds over time
+- Governed evolution means the agent can update its own self-model, but only within boundaries you configure — no silent personality drift
+- Knowledge graph linking between memory entries enables associative retrieval ("what connects the auth system to the API layer?") that keyword search can't do
+
 ## Architecture
 
 Memory is stored in two complementary formats:
