@@ -38,11 +38,17 @@ const ProceduralSchema = z.object({
   crystallization_threshold: z.number().positive().default(3),
 });
 
+const ValenceSchema = z.object({
+  scorer: z.enum(["local", "llm"]).default("local"),
+  llm_provider: z.string().nullable().default(null),
+});
+
 const MemorySchema = z.object({
   working_memory_max_lines: z.number().positive().default(100),
   episodic: EpisodicSchema.default({}),
   procedural: ProceduralSchema.default({}),
   forgetting: ForgettingSchema.default({}),
+  valence: ValenceSchema.default({}),
 });
 
 const EmbeddingsSchema = z.object({
@@ -59,7 +65,6 @@ const EmbeddingsSchema = z.object({
 
 const GraphSchema = z.object({
   enabled: z.boolean().default(true),
-  algorithm: z.enum(["pagerank"]).default("pagerank"),
   trigger: z.enum(["auto", "always", "never"]).default("auto"),
 });
 
@@ -87,9 +92,15 @@ const DreamCycleSchema = z.object({
   idle_behavior: z.enum(["skip", "recall", "health_only"]).default("recall"),
 });
 
+const ReasonerSchema = z.object({
+  type: z.enum(["rule", "llm"]).default("rule"),
+  llm_provider: z.string().nullable().default(null),
+});
+
 const ConsolidationSchema = z.object({
   dream_cycle: DreamCycleSchema.default({}),
   verification: VerificationSchema.default({}),
+  reasoner: ReasonerSchema.default({}),
 });
 
 const HypothesisSchema = z.object({

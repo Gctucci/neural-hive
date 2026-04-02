@@ -69,6 +69,9 @@ describe("RetrievalEngine", () => {
       ref_count: 0,
       confidence: 0.9,
       line_range: null,
+      half_life: 30,
+      retention: 1.0,
+      source_episode_ids: "",
     });
     db.indexContent(id, "semantic", "Authentication JWT tokens and OAuth2 flows.");
 

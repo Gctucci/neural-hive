@@ -8,6 +8,7 @@ import type {
   RelationRecord,
   HypothesisRecord,
   HypothesisStatus,
+  ConsolidationStatus,
 } from "@neuroclaw/config";
 
 const SCHEMA = `
@@ -21,7 +22,10 @@ const SCHEMA = `
     outcome_signal REAL NOT NULL DEFAULT 0.0,
     consolidation_status TEXT NOT NULL DEFAULT 'pending',
     file_path TEXT NOT NULL,
-    summary TEXT NOT NULL
+    summary TEXT NOT NULL,
+    valence REAL NOT NULL DEFAULT 0.0,
+    arousal REAL NOT NULL DEFAULT 0.0,
+    context_snippet TEXT NOT NULL DEFAULT ''
   );
 
   CREATE TABLE IF NOT EXISTS semantic (
@@ -33,7 +37,10 @@ const SCHEMA = `
     ref_count INTEGER NOT NULL DEFAULT 0,
     confidence REAL NOT NULL DEFAULT 0.5,
     file_path TEXT NOT NULL,
-    line_range TEXT
+    line_range TEXT,
+    half_life REAL NOT NULL DEFAULT 30.0,
+    retention REAL NOT NULL DEFAULT 1.0,
+    source_episode_ids TEXT NOT NULL DEFAULT ''
   );
 
   CREATE TABLE IF NOT EXISTS procedures (
@@ -52,6 +59,8 @@ const SCHEMA = `
     weight REAL NOT NULL DEFAULT 1.0,
     created INTEGER NOT NULL,
     last_used INTEGER NOT NULL,
+    provenance TEXT NOT NULL DEFAULT 'rule',
+    confidence REAL NOT NULL DEFAULT 1.0,
     PRIMARY KEY (source_id, target_id, relation_type)
   );
 
@@ -149,8 +158,8 @@ export class NeuroclawDB {
 
   insertEpisode(ep: EpisodeRecord): void {
     this.db.run(
-      `INSERT INTO episodes (id, timestamp, session_id, project, importance, is_correction, outcome_signal, consolidation_status, file_path, summary)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO episodes (id, timestamp, session_id, project, importance, is_correction, outcome_signal, consolidation_status, file_path, summary, valence, arousal, context_snippet)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         ep.id,
         ep.timestamp,
@@ -162,6 +171,9 @@ export class NeuroclawDB {
         ep.consolidation_status,
         ep.file_path,
         ep.summary,
+        ep.valence,
+        ep.arousal,
+        ep.context_snippet,
       ]
     );
   }
@@ -174,12 +186,16 @@ export class NeuroclawDB {
     return rows.map((r) => ({ ...r, is_correction: Boolean(r.is_correction) }));
   }
 
+  updateEpisodeStatus(id: string, status: ConsolidationStatus): void {
+    this.db.run("UPDATE episodes SET consolidation_status = ? WHERE id = ?", [status, id]);
+  }
+
   // --- Semantic ---
 
   insertSemantic(entry: SemanticRecord): void {
     this.db.run(
-      `INSERT INTO semantic (id, domain, created, last_accessed, importance, ref_count, confidence, file_path, line_range)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO semantic (id, domain, created, last_accessed, importance, ref_count, confidence, file_path, line_range, half_life, retention, source_episode_ids)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         entry.id,
         entry.domain,
@@ -190,12 +206,37 @@ export class NeuroclawDB {
         entry.confidence,
         entry.file_path,
         entry.line_range,
+        entry.half_life,
+        entry.retention,
+        entry.source_episode_ids,
       ]
     );
   }
 
   getSemantic(id: string): SemanticRecord | null {
     return queryOne(this.db, "SELECT * FROM semantic WHERE id = ?", [id]);
+  }
+
+  getSemanticByDomain(domain: string): SemanticRecord[] {
+    return queryAll(this.db, "SELECT * FROM semantic WHERE domain = ?", [domain]);
+  }
+
+  getAllSemanticEntries(): SemanticRecord[] {
+    return queryAll(this.db, "SELECT * FROM semantic ORDER BY importance DESC");
+  }
+
+  updateSemanticRetention(id: string, retention: number, halfLife: number): void {
+    this.db.run(
+      "UPDATE semantic SET retention = ?, half_life = ? WHERE id = ?",
+      [retention, halfLife, id]
+    );
+  }
+
+  incrementSemanticRefCount(id: string): void {
+    this.db.run(
+      "UPDATE semantic SET ref_count = ref_count + 1, last_accessed = ? WHERE id = ?",
+      [Date.now(), id]
+    );
   }
 
   // --- Procedures ---
@@ -212,14 +253,18 @@ export class NeuroclawDB {
 
   insertRelation(rel: RelationRecord): void {
     this.db.run(
-      `INSERT INTO relations (source_id, target_id, relation_type, weight, created, last_used)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [rel.source_id, rel.target_id, rel.relation_type, rel.weight, rel.created, rel.last_used]
+      `INSERT INTO relations (source_id, target_id, relation_type, weight, created, last_used, provenance, confidence)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [rel.source_id, rel.target_id, rel.relation_type, rel.weight, rel.created, rel.last_used, rel.provenance, rel.confidence]
     );
   }
 
   getRelationsFrom(sourceId: string): RelationRecord[] {
     return queryAll(this.db, "SELECT * FROM relations WHERE source_id = ?", [sourceId]);
+  }
+
+  getRelationsTo(targetId: string): RelationRecord[] {
+    return queryAll(this.db, "SELECT * FROM relations WHERE target_id = ?", [targetId]);
   }
 
   // --- Hypotheses ---

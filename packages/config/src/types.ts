@@ -71,6 +71,9 @@ export interface EpisodeRecord {
   consolidation_status: ConsolidationStatus;
   file_path: string;
   summary: string;
+  valence: number;         // -1.0 to +1.0
+  arousal: number;         // 0.0 to 1.0
+  context_snippet: string; // raw text that triggered the valence score
 }
 
 export interface SemanticRecord {
@@ -83,6 +86,9 @@ export interface SemanticRecord {
   confidence: number;
   file_path: string;
   line_range: string | null;
+  half_life: number;          // days
+  retention: number;          // 0.0-1.0
+  source_episode_ids: string; // comma-separated episode IDs
 }
 
 export interface ProcedureRecord {
@@ -101,6 +107,8 @@ export interface RelationRecord {
   weight: number;
   created: number;
   last_used: number;
+  provenance: "rule" | "llm";
+  confidence: number;         // 0.0-1.0
 }
 
 export interface HypothesisRecord {
