@@ -67,4 +67,36 @@ describe("computeImportance", () => {
     });
     expect(high).toBeGreaterThan(low);
   });
+
+  it("high valence magnitude increases importance", () => {
+    const neutral = computeImportance({
+      baseWeight: 0.5,
+      recencyFactor: 0.5,
+      refCount: 0,
+      outcomeSignal: 0.0,
+      isCorrection: false,
+      valenceMagnitude: 0.0,
+    });
+    const emotional = computeImportance({
+      baseWeight: 0.5,
+      recencyFactor: 0.5,
+      refCount: 0,
+      outcomeSignal: 0.0,
+      isCorrection: false,
+      valenceMagnitude: 0.9,
+    });
+    expect(emotional).toBeGreaterThan(neutral);
+  });
+
+  it("valenceMagnitude defaults to 0 when omitted", () => {
+    const score = computeImportance({
+      baseWeight: 0.5,
+      recencyFactor: 0.5,
+      refCount: 0,
+      outcomeSignal: 0.0,
+      isCorrection: false,
+    });
+    expect(score).toBeGreaterThan(0);
+    expect(score).toBeLessThan(1);
+  });
 });

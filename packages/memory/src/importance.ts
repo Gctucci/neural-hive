@@ -9,6 +9,8 @@ export interface ImportanceInput {
   outcomeSignal: number;
   /** Whether this memory records a correction */
   isCorrection: boolean;
+  /** Absolute valence magnitude (0-1). High = emotionally significant. */
+  valenceMagnitude?: number;
 }
 
 // Configurable weights
@@ -17,6 +19,7 @@ const W_RECENCY = 0.8;
 const W_REFS = 0.5;
 const W_OUTCOME = 0.6;
 const W_CORRECTION = 1.2;
+const W_VALENCE = 0.9;
 
 function sigmoid(x: number): number {
   return 1 / (1 + Math.exp(-x));
@@ -32,6 +35,7 @@ function sigmoid(x: number): number {
  * + w_refs × log₂(ref_count + 1)
  * + w_outcome × |outcome_signal|
  * + w_correction × is_correction
+ * + w_valence × valence_magnitude
  * )
  *
  * Note: |outcome_signal| — both success and failure are valuable.
@@ -43,6 +47,7 @@ export function computeImportance(input: ImportanceInput): number {
     refCount,
     outcomeSignal,
     isCorrection,
+    valenceMagnitude,
   } = input;
 
   const score =
@@ -50,7 +55,8 @@ export function computeImportance(input: ImportanceInput): number {
     W_RECENCY * recencyFactor +
     W_REFS * Math.log2(refCount + 1) +
     W_OUTCOME * Math.abs(outcomeSignal) +
-    W_CORRECTION * (isCorrection ? 1 : 0);
+    W_CORRECTION * (isCorrection ? 1 : 0) +
+    W_VALENCE * (valenceMagnitude ?? 0);
 
   return sigmoid(score);
 }
