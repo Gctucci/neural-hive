@@ -186,6 +186,14 @@ export class NeuroclawDB {
     return rows.map((r) => ({ ...r, is_correction: Boolean(r.is_correction) }));
   }
 
+  getAllEpisodes(): EpisodeRecord[] {
+    const rows = queryAll(
+      this.db,
+      "SELECT * FROM episodes ORDER BY timestamp DESC"
+    );
+    return rows.map((r) => ({ ...r, is_correction: Boolean(r.is_correction) }));
+  }
+
   updateEpisodeStatus(id: string, status: ConsolidationStatus): void {
     this.db.run("UPDATE episodes SET consolidation_status = ? WHERE id = ?", [status, id]);
   }
@@ -288,6 +296,10 @@ export class NeuroclawDB {
 
   getHypothesis(id: string): HypothesisRecord | null {
     return queryOne(this.db, "SELECT * FROM hypotheses WHERE id = ?", [id]);
+  }
+
+  getAllHypotheses(): HypothesisRecord[] {
+    return queryAll(this.db, "SELECT * FROM hypotheses ORDER BY created DESC");
   }
 
   updateHypothesisStatus(id: string, status: HypothesisStatus): void {
