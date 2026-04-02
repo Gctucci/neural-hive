@@ -118,7 +118,7 @@ interface ValenceScorer {
 
 Three layers combined:
 
-1. **VADER base** — `vader-sentiment` npm package gives a compound score (-1 to +1), maps directly to valence. Pure JS, no network calls.
+1. **VADER base** — `crowd-sentiment` npm package (maintained fork of `vader-sentiment`, last published 2023). Gives a compound score (-1 to +1), maps directly to valence. Pure JS, no network calls. Fallback option: `sentiment` (AFINN-based, has `@types/sentiment`) if VADER proves unsuitable.
 
 2. **Arousal heuristic** — computed from text intensity signals:
    - Exclamation/question mark density
@@ -146,7 +146,7 @@ memory:
 
 ### New Dependency
 
-`vader-sentiment` added to `@neuroclaw/memory` package.json.
+`crowd-sentiment` added to `@neuroclaw/memory` package.json (maintained VADER fork).
 
 ---
 
@@ -210,7 +210,7 @@ Add optional `valenceMagnitude: number` to `ImportanceInput`. New weight constan
 
 ### Integration Point
 
-Adapters (`adapter-claude-code`, `adapter-openclaw`) call `EpisodeCapture.capture()` in their `afterAction()` hook.
+`NeuroclawEngine` exposes a `captureEpisode(input: CaptureInput): Promise<EpisodeRecord>` facade method that delegates to its internal `EpisodeCapture` instance. Adapters call `engine.captureEpisode()` in their `afterAction()` hook — they never interact with the DB, vault, or scorer directly.
 
 ---
 
@@ -218,7 +218,53 @@ Adapters (`adapter-claude-code`, `adapter-openclaw`) call `EpisodeCapture.captur
 
 **Location:** `packages/core/src/dream.ts`
 
-**Class:**
+### DreamReasoner Interface
+
+The dream cycle's replay and consolidation phases require reasoning capabilities that go beyond rule-based heuristics — specifically contradiction detection, episode-to-semantic distillation, and domain classification. These are inherently LLM tasks (the original design doc section 4.3 states "consolidation is prompt-based").
+
+A `DreamReasoner` interface abstracts this, with two implementations:
+
+```typescript
+interface ReplayJudgment {
+  relation: "supports" | "contradicts" | "novel";
+  confidence: number;       // 0.0-1.0
+  reasoning: string;        // why this judgment was made (for audit)
+}
+
+interface DistillationResult {
+  generalization: string;   // the semantic summary extracted from the episode
+  domain: string;           // classified domain (e.g., "auth", "testing", "deployment")
+  tags: string[];           // additional tags for linking
+}
+
+interface DreamReasoner {
+  /** Given an episode and a candidate semantic match, judge the relationship */
+  judgeReplay(episode: EpisodeRecord, episodeContent: string,
+              semanticEntry: SemanticRecord, semanticContent: string): Promise<ReplayJudgment>;
+
+  /** Distill a raw episode into a semantic generalization */
+  distill(episode: EpisodeRecord, episodeContent: string): Promise<DistillationResult>;
+}
+```
+
+**`RuleBasedReasoner`** (default, no LLM):
+- `judgeReplay`: if episode has `is_correction = true` and FTS match is strong -> `contradicts`. If `outcome_signal > 0` and strong match -> `supports`. Otherwise -> `novel`. Confidence is always `1.0` for rules.
+- `distill`: uses the episode summary as-is for the generalization. Domain is extracted from the episode's `file_path` directory structure (e.g., `src/auth/` -> `"auth"`) or falls back to `"general"`.
+
+**`LLMReasoner`** (optional, configured via adapter):
+- `judgeReplay`: sends a short prompt with both texts, asks for a structured JSON judgment. Confidence reflects LLM certainty.
+- `distill`: sends the episode content, asks the LLM to extract a reusable generalization, classify the domain, and suggest tags.
+- Configured in `neuroclaw.yaml`:
+
+```yaml
+consolidation:
+  reasoner: "rule"  # or "llm"
+  llm_provider: null  # adapter-specific
+```
+
+**Location:** `packages/core/src/reasoner.ts`
+
+### DreamCycle Class
 
 ```typescript
 class DreamCycle {
@@ -228,7 +274,7 @@ class DreamCycle {
     config: NeuroclawConfig,
     gate: GovernanceGate,
     audit: AuditTrail,
-    scorer: ValenceScorer
+    reasoner: DreamReasoner
   )
 
   run(): Promise<DreamReport>
@@ -248,12 +294,13 @@ For each pending episode, replay against the semantic store:
 
 - **FTS search** the episode summary against semantic entries
 - A match is "strong" when FTS rank (absolute value) >= 3.0 (at least 3 term occurrences). This threshold is a starting point and may be tuned based on observed consolidation quality.
-- Strong match + confirmation -> increment `ref_count`, update `last_accessed`, add `supports` relation
-- Strong match + contradiction -> add `contradicts` relation, create hypothesis for review
-- No match (or all matches below threshold) -> create new semantic entry by distilling episode into generalization, write to `vault/semantic/domains/{domain}.md`
+- For each strong match: call `reasoner.judgeReplay(episode, match)` to determine the relationship:
+  - `supports` -> increment `ref_count`, update `last_accessed`, add `supports` relation
+  - `contradicts` -> add `contradicts` relation, create hypothesis for review
+- No match (or all matches below threshold) -> call `reasoner.distill(episode)` to extract a semantic generalization with classified domain, write to `vault/semantic/domains/{domain}.md`
 - Repeated workflow detected -> check procedures table, increment `success_count` or create new procedure
 
-Rule-based relation discovery runs here: `provenance = "rule"`, `confidence = 1.0`.
+Rule-based relations get `provenance = "rule"`, `confidence = 1.0`. LLM-derived relations get `provenance = "llm"`, `confidence` from the reasoner's judgment.
 
 ### Phase 3 — Consolidation
 
@@ -293,6 +340,7 @@ Write report to `vault/dreams/dream-{timestamp}.md`, return `DreamReport`.
 ### Engine Integration
 
 `NeuroclawEngine` gains:
+- `captureEpisode(input: CaptureInput): Promise<EpisodeRecord>` — facade for adapters, delegates to internal `EpisodeCapture`
 - `executeDream(): Promise<DreamReport>` — delegates to `DreamCycle.run()`
 - `scheduleDream()` — stores schedule config (actual cron is platform-specific, handled by adapters)
 
@@ -320,9 +368,8 @@ Replaces the stub in `RetrievalEngine.graphWalkSearch()`.
 
 ### Config
 
-Uses existing `retrieval.graph` config:
+Uses existing `retrieval.graph` config (simplified — `algorithm` field removed as YAGNI):
 - `enabled: true` (default)
-- `algorithm: "pagerank"` — reserved for future; Phase 2 uses depth-decay walk
 - `trigger: "auto"` — `classifyQuery()` decides text vs graph (already implemented)
 
 No changes to `classifyQuery()`.
@@ -346,7 +393,7 @@ Each step builds on real (not stubbed) subsystems from the previous step.
 
 | Package | Added To | Purpose |
 |---------|----------|---------|
-| `vader-sentiment` | `@neuroclaw/memory` | Local valence scoring |
+| `crowd-sentiment` | `@neuroclaw/memory` | Local valence scoring (maintained VADER fork) |
 
 ## New Files
 
@@ -356,21 +403,22 @@ Each step builds on real (not stubbed) subsystems from the previous step.
 | `memory/src/valence.ts` | memory | ValenceScorer interface + local/LLM implementations |
 | `memory/src/capture.ts` | memory | EpisodeCapture pipeline |
 | `core/src/dream.ts` | core | DreamCycle orchestrator |
+| `core/src/reasoner.ts` | core | DreamReasoner interface + RuleBasedReasoner + LLMReasoner |
 
 ## Modified Files
 
 | File | Change |
 |------|--------|
 | `config/src/index.ts` | Re-export types |
-| `config/src/schema.ts` | Add valence config section |
+| `config/src/schema.ts` | Add valence config section, add reasoner config, remove graph `algorithm` field |
 | `core/src/types.ts` | Re-export from config (backwards compat) |
 | `core/src/engine.ts` | Add dream cycle integration |
-| `core/src/index.ts` | Export DreamCycle |
+| `core/src/index.ts` | Export DreamCycle, DreamReasoner |
 | `memory/src/sqlite.ts` | Schema migrations, new query methods |
 | `memory/src/importance.ts` | Add valenceMagnitude to ImportanceInput |
 | `memory/src/retrieval.ts` | Implement graphWalkSearch |
 | `memory/src/index.ts` | Export new modules |
-| `memory/package.json` | Add vader-sentiment, remove @neuroclaw/core |
+| `memory/package.json` | Add crowd-sentiment, remove @neuroclaw/core |
 | `governance/package.json` | Replace @neuroclaw/core with @neuroclaw/config |
 | `governance/src/invariants.ts` | Update import path |
 | `governance/src/mode.ts` | Update import path |
