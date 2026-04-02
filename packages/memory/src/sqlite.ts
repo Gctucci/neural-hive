@@ -8,7 +8,7 @@ import type {
   RelationRecord,
   HypothesisRecord,
   HypothesisStatus,
-} from "@neuroclaw/core";
+} from "@neuroclaw/config";
 
 const SCHEMA = `
   CREATE TABLE IF NOT EXISTS episodes (

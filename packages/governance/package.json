@@ -9,7 +9,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@neuroclaw/core": "0.1.0"
+    "@neuroclaw/config": "0.1.0"
   },
   "devDependencies": {
     "typescript": "^5.7.0",

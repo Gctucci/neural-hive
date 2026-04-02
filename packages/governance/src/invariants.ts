@@ -1,4 +1,4 @@
-import type { GovernanceMode } from "@neuroclaw/core";
+import type { GovernanceMode } from "@neuroclaw/config";
 
 export class InvariantViolation extends Error {
   constructor(invariant: string, details: string) {

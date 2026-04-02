@@ -1,4 +1,4 @@
-import type { GovernanceMode } from "@neuroclaw/core";
+import type { GovernanceMode } from "@neuroclaw/config";
 
 export type Operation =
   | "episodic_capture"
