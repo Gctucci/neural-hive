@@ -11,6 +11,7 @@
   "dependencies": {
     "@neuroclaw/config": "0.1.0",
     "@neuroclaw/governance": "0.1.0",
+    "crowd-sentiment": "^1.1.7",
     "sql.js": "^1.14.1"
   },
   "devDependencies": {
