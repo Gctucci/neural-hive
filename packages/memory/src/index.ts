@@ -12,3 +12,5 @@ export {
   type ValenceScorer,
   type LLMCallFn,
 } from "./valence";
+export { Ingester, type IngestInput, type IngestedEntry, type IngestResult } from "./ingester";
+export { Migrator, type MigrationManifest, type MigrationManifestFile, type MigrationReport } from "./migrator";

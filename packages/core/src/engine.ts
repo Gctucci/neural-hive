@@ -1,9 +1,10 @@
 import * as path from "node:path";
+import * as fs from "node:fs";
 import { loadConfig, resolveStorePath } from "@neuroclaw/config";
 import type { NeuroclawConfig } from "@neuroclaw/config";
 import type { EpisodeRecord, DreamReport } from "@neuroclaw/config";
-import { Vault, NeuroclawDB, WorkingMemory, RetrievalEngine } from "@neuroclaw/memory";
-import type { RetrievedMemory } from "@neuroclaw/memory";
+import { Vault, NeuroclawDB, WorkingMemory, RetrievalEngine, Ingester, Migrator } from "@neuroclaw/memory";
+import type { RetrievedMemory, IngestInput, IngestResult, MigrationReport } from "@neuroclaw/memory";
 import { EpisodeCapture, LocalValenceScorer } from "@neuroclaw/memory";
 import type { CaptureInput } from "@neuroclaw/memory";
 import { GovernanceGate, AuditTrail, SecurityScanner } from "@neuroclaw/governance";
@@ -102,6 +103,25 @@ export class NeuroclawEngine {
 
   async executeDream(): Promise<DreamReport> {
     return this.dreamCycle.run();
+  }
+
+  async migrateFromOpenClaw(
+    workDir: string,
+    options?: { dryRun?: boolean }
+  ): Promise<MigrationReport> {
+    const ingester = new Ingester(this.db, this.vault);
+    const migrator = new Migrator(ingester);
+    const manifest = migrator.scan(workDir);
+    return migrator.run(manifest, options);
+  }
+
+  async ingestFile(
+    filePath: string,
+    options?: Omit<IngestInput, "filePath" | "content">
+  ): Promise<IngestResult> {
+    const content = fs.readFileSync(filePath, "utf-8");
+    const ingester = new Ingester(this.db, this.vault);
+    return ingester.ingest({ filePath, content, ...options });
   }
 
   close(): void {
