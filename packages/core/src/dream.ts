@@ -90,6 +90,7 @@ export class DreamCycle {
       this.db.updateEpisodeStatus(episode.id, "consolidated");
     }
     this.applyForgettingCurves(now);
+    this.decayStaleEdges();
 
     // -- Phase 4: Self-Model Evolution --
     await this.evolveHypotheses(hypothesesUpdated, capabilityChanges);
@@ -282,6 +283,8 @@ export class DreamCycle {
     const unforgettable = this.config.memory.forgetting.unforgettable_categories;
 
     for (const entry of allSemantic) {
+      // Skip migration-tagged entries
+      if (entry.tags.includes("migration")) continue;
       // Skip unforgettable domains
       if (unforgettable.includes(entry.domain)) continue;
 
@@ -434,19 +437,92 @@ export class DreamCycle {
   private archiveLowRetention(): number {
     const allSemantic = this.db.getAllSemanticEntries();
     const minImportance = this.config.memory.forgetting.min_importance_to_keep;
+    const unforgettableCategories = this.config.memory.forgetting.unforgettable_categories;
+    const mergeBeforeDrop = this.config.memory.forgetting.merge_before_drop;
     let archived = 0;
 
     for (const entry of allSemantic) {
-      if (entry.retention < minImportance) {
-        const content = this.vault.read(entry.file_path);
-        if (content) {
-          this.vault.write(`archive/${entry.id}.md`, content);
+      // Tier 3: never archive migration-tagged or unforgettable-domain entries
+      if (entry.tags.includes("migration")) continue;
+      if (unforgettableCategories.includes(entry.domain)) continue;
+
+      if (entry.retention >= minImportance) continue;
+
+      // Tier 2: merge before drop
+      if (mergeBeforeDrop) {
+        const merged = this.tryMergeIntoDomainSurvivor(entry);
+        if (merged) {
+          archived++;
+          continue;
         }
-        archived++;
       }
+
+      // Archive normally
+      const content = this.vault.read(entry.file_path);
+      if (content) {
+        this.vault.write(`archive/${entry.id}.md`, content);
+      }
+      archived++;
     }
 
     return archived;
+  }
+
+  private tryMergeIntoDomainSurvivor(candidate: SemanticRecord): boolean {
+    const sameDomain = this.db.getSemanticByDomain(candidate.domain);
+    const survivors = sameDomain.filter(
+      (s) => s.id !== candidate.id && s.retention >= 0.5
+    );
+    if (survivors.length === 0) return false;
+
+    const candidateContent = this.vault.read(candidate.file_path);
+    if (!candidateContent) return false;
+
+    const words = candidateContent
+      .replace(/[^a-zA-Z0-9\s]/g, " ")
+      .trim()
+      .split(/\s+/)
+      .filter((w) => w.length > 3)
+      .slice(0, 5);
+
+    if (words.length === 0) return false;
+
+    // FTS4 MATCH with implicit AND — use OR to broaden the match
+    const keywords = words.join(" OR ");
+    if (!keywords) return false;
+
+    let ftsResults: Array<{ source_id: string; source_type: string; rank: number }> = [];
+    try {
+      ftsResults = this.db.searchFTS(keywords, 10);
+    } catch {
+      return false;
+    }
+
+    const survivorIds = new Set(survivors.map((s) => s.id));
+    const matchedSurvivor = ftsResults.find((r) => survivorIds.has(r.source_id));
+    if (!matchedSurvivor) return false;
+
+    const survivor = survivors.find((s) => s.id === matchedSurvivor.source_id)!;
+    const survivorContent = this.vault.read(survivor.file_path) ?? "";
+
+    const footnote = `\n\n<!-- merged from ${candidate.id} -->\n${candidateContent}\n`;
+    this.vault.write(survivor.file_path, survivorContent + footnote);
+
+    return true;
+  }
+
+  private decayStaleEdges(): void {
+    const windowDays = this.config.memory.forgetting.decay_window_days;
+    const staleEdges = this.db.getStaleEdges(windowDays);
+    for (const edge of staleEdges) {
+      const newWeight = Math.max(edge.weight * 0.9, 0.1);
+      this.db.updateEdgeWeight(
+        edge.source_id,
+        edge.target_id,
+        edge.relation_type,
+        newWeight
+      );
+    }
   }
 
   // -----------------------------------------------------------------------
