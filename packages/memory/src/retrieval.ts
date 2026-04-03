@@ -74,6 +74,23 @@ function extractKeywords(query: string): string {
   return keywords.join(" OR ");
 }
 
+function parseCitationSource(tags: string): string | undefined {
+  const parts = tags.split(",");
+  const sourceTag = parts.find((t) => t.startsWith("source:"));
+  return sourceTag ? sourceTag.slice("source:".length) : undefined;
+}
+
+function buildCitationLabel(
+  sourceFile: string | undefined,
+  domain: string,
+  createdAt: number
+): string {
+  const daysAgo = Math.floor((Date.now() - createdAt) / 86_400_000);
+  const age = daysAgo === 0 ? "today" : `${daysAgo}d ago`;
+  const src = sourceFile ?? domain;
+  return `${src} · ${age}`;
+}
+
 export class RetrievalEngine {
   private db: NeuroclawDB;
   private vault: Vault;
@@ -136,6 +153,13 @@ export class RetrievalEngine {
           scored.set(neighborId, { score, sourceType: "semantic" });
         }
 
+        // GSEM: increment edge weight for traversed hop-1 edge
+        this.db.incrementEdgeWeight(
+          rel.source_id,
+          rel.target_id,
+          rel.relation_type
+        );
+
         // Hop 2
         const hop2 = [
           ...this.db.getRelationsFrom(neighborId),
@@ -150,6 +174,13 @@ export class RetrievalEngine {
           if (!existing2 || score2 > existing2.score) {
             scored.set(neighbor2Id, { score: score2, sourceType: "semantic" });
           }
+
+          // GSEM: increment edge weight for traversed hop-2 edge
+          this.db.incrementEdgeWeight(
+            rel2.source_id,
+            rel2.target_id,
+            rel2.relation_type
+          );
         }
       }
     }
@@ -174,6 +205,13 @@ export class RetrievalEngine {
       const content = this.vault.read(record.file_path);
       if (!content) continue;
 
+      const sourceFile = parseCitationSource(record.tags ?? "");
+      const citationLabel = buildCitationLabel(
+        sourceFile,
+        record.domain,
+        record.created
+      );
+
       memories.push({
         id: record.id,
         type: "semantic",
@@ -182,6 +220,10 @@ export class RetrievalEngine {
         relevanceScore: score,
         source: record.file_path,
         created: String(record.created),
+        sourceFile,
+        domain: record.domain,
+        createdAt: record.created,
+        citationLabel,
       });
     }
 
