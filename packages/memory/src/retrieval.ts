@@ -87,8 +87,11 @@ function buildCitationLabel(
 ): string {
   const daysAgo = Math.floor((Date.now() - createdAt) / 86_400_000);
   const age = daysAgo === 0 ? "today" : `${daysAgo}d ago`;
-  const src = sourceFile ?? domain;
-  return `${src} · ${age}`;
+  const parts: string[] = [];
+  if (sourceFile) parts.push(sourceFile);
+  parts.push(domain);
+  parts.push(age);
+  return parts.join(" · ");
 }
 
 export class RetrievalEngine {
