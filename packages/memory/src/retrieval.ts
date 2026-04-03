@@ -44,6 +44,31 @@ export function classifyQuery(query: string): QueryType {
   return "text_search";
 }
 
+const STOP_WORDS = new Set([
+  "a", "an", "the", "is", "are", "was", "were", "be", "been", "being",
+  "have", "has", "had", "do", "does", "did", "will", "would", "could",
+  "should", "may", "might", "shall", "can", "to", "of", "in", "on",
+  "at", "by", "for", "with", "about", "as", "into", "through", "from",
+  "and", "or", "but", "not", "so", "yet", "both", "either", "neither",
+  "how", "what", "why", "when", "where", "who", "which", "that", "this",
+  "these", "those", "it", "its", "than", "then", "there", "their",
+  "relate", "relates", "related", "relation", "relationship",
+  "connect", "connects", "connected", "connection",
+  "between", "links", "linked", "associate", "associated",
+  "depends", "dependency", "compare", "contrast", "difference",
+]);
+
+/**
+ * Extract FTS-friendly keywords from a query by stripping stop words and
+ * relational/function words that won't appear in indexed content.
+ * Returns an OR-joined query so documents matching any keyword are found.
+ */
+function extractKeywords(query: string): string {
+  const tokens = query.toLowerCase().split(/\s+/);
+  const keywords = tokens.filter((t) => t.length > 2 && !STOP_WORDS.has(t));
+  return keywords.join(" OR ");
+}
+
 export class RetrievalEngine {
   private db: NeuroclawDB;
   private vault: Vault;
@@ -69,19 +94,76 @@ export class RetrievalEngine {
   }
 
   private graphWalkSearch(query: string, limit: number): RetrievedMemory[] {
-    // Phase 1: graph-walk retrieval will be fully implemented in Phase 2.
-    // The graph walk requires the relations table to be populated during consolidation.
-    // For now, fall back to text search.
-    return this.textSearch(query, limit);
+    // Step 1: Seed selection — top 3 FTS results using keyword-extracted query
+    // (strips stop words and relational terms so FTS MATCH succeeds)
+    const ftsQuery = extractKeywords(query);
+    if (!ftsQuery) return [];
+    const seeds = this.db.searchFTS(ftsQuery, 3);
+    if (seeds.length === 0) return [];
+
+    const scored = new Map<string, { score: number; sourceType: string }>();
+
+    // Score seeds
+    for (const seed of seeds) {
+      scored.set(seed.source_id, {
+        score: Math.abs(seed.rank),
+        sourceType: seed.source_type,
+      });
+    }
+
+    const DEPTH_DECAY = 0.7;
+
+    // Walk up to 2 hops
+    for (const seed of seeds) {
+      const seedScore = Math.abs(seed.rank);
+
+      // Hop 1
+      const hop1 = [
+        ...this.db.getRelationsFrom(seed.source_id),
+        ...this.db.getRelationsTo(seed.source_id),
+      ];
+
+      for (const rel of hop1) {
+        const neighborId = rel.source_id === seed.source_id ? rel.target_id : rel.source_id;
+        const score = seedScore * rel.weight * DEPTH_DECAY;
+        const existing = scored.get(neighborId);
+        if (!existing || score > existing.score) {
+          scored.set(neighborId, { score, sourceType: "semantic" });
+        }
+
+        // Hop 2
+        const hop2 = [
+          ...this.db.getRelationsFrom(neighborId),
+          ...this.db.getRelationsTo(neighborId),
+        ];
+
+        for (const rel2 of hop2) {
+          const neighbor2Id = rel2.source_id === neighborId ? rel2.target_id : rel2.source_id;
+          if (neighbor2Id === seed.source_id) continue;
+          const score2 = seedScore * rel.weight * rel2.weight * DEPTH_DECAY * DEPTH_DECAY;
+          const existing2 = scored.get(neighbor2Id);
+          if (!existing2 || score2 > existing2.score) {
+            scored.set(neighbor2Id, { score: score2, sourceType: "semantic" });
+          }
+        }
+      }
+    }
+
+    // Rank and hydrate
+    const sorted = [...scored.entries()]
+      .sort((a, b) => b[1].score - a[1].score)
+      .slice(0, limit);
+
+    return this.hydrateScored(sorted);
   }
 
-  private hydrate(
-    ftsResults: Array<{ source_id: string; source_type: string; rank: number }>
+  private hydrateScored(
+    entries: Array<[string, { score: number; sourceType: string }]>
   ): RetrievedMemory[] {
     const memories: RetrievedMemory[] = [];
 
-    for (const result of ftsResults) {
-      const record = this.db.getSemantic(result.source_id);
+    for (const [id, { score }] of entries) {
+      const record = this.db.getSemantic(id);
       if (!record) continue;
 
       const content = this.vault.read(record.file_path);
@@ -92,13 +174,20 @@ export class RetrievalEngine {
         type: "semantic",
         content,
         importance: record.importance,
-        // FTS4 rank is a negative count; negate to get a positive relevance score
-        relevanceScore: Math.abs(result.rank),
+        relevanceScore: score,
         source: record.file_path,
         created: String(record.created),
       });
     }
 
     return memories;
+  }
+
+  private hydrate(
+    ftsResults: Array<{ source_id: string; source_type: string; rank: number }>
+  ): RetrievedMemory[] {
+    return this.hydrateScored(
+      ftsResults.map((r) => [r.source_id, { score: Math.abs(r.rank), sourceType: r.source_type }])
+    );
   }
 }
