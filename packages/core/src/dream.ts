@@ -459,9 +459,8 @@ export class DreamCycle {
 
       // Archive normally
       const content = this.vault.read(entry.file_path);
-      if (content) {
-        this.vault.write(`archive/${entry.id}.md`, content);
-      }
+      if (!content) continue;  // skip entries with missing vault files
+      this.vault.write(`archive/${entry.id}.md`, content);
       archived++;
     }
 

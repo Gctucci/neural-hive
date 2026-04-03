@@ -204,7 +204,7 @@ export class Ingester {
           const record: EpisodeRecord = {
             id,
             timestamp: now,
-            session_id: "migration",
+            session_id: isMigration ? "migration" : "ingest",
             project: null,
             importance,
             is_correction: false,
