@@ -151,7 +151,7 @@ export class Ingester {
     const baseWeight = isMigration ? 0.6 : 0.5;
     const resolvedType: MemoryType = type ?? "semantic";
 
-    let sections: Array<{ domain: string; body: string }>;
+    let sections: Array<{ domain: string; body: string; heading?: string }>;
 
     if (resolvedType === "episodic") {
       sections = [{ domain: domainOverride ?? "daily-memory", body: content.trim() }];
@@ -254,7 +254,10 @@ export class Ingester {
             tags,
           };
           this.db.insertSemantic(record);
-          this.db.indexContent(id, "semantic", section.body);
+          const indexedContent = section.heading
+            ? `${section.heading}\n${section.body}`
+            : section.body;
+          this.db.indexContent(id, "semantic", indexedContent);
         }
       }
     }
