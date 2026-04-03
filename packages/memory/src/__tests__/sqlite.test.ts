@@ -142,6 +142,7 @@ describe("NeuroclawDB", () => {
         half_life: 30,
         retention: 1.0,
         source_episode_ids: "",
+        tags: "",
       });
 
       const entry = db.getSemantic("sem-001");
@@ -163,6 +164,7 @@ describe("NeuroclawDB", () => {
         half_life: 60,
         retention: 0.85,
         source_episode_ids: "ep-001,ep-002",
+        tags: "",
       });
 
       const entry = db.getSemantic("sem-002");
@@ -186,6 +188,7 @@ describe("NeuroclawDB", () => {
         half_life: 30,
         retention: 1.0,
         source_episode_ids: "",
+        tags: "",
       });
       db.insertSemantic({
         id: "sem-004",
@@ -200,6 +203,7 @@ describe("NeuroclawDB", () => {
         half_life: 30,
         retention: 1.0,
         source_episode_ids: "",
+        tags: "",
       });
 
       const tsEntries = db.getSemanticByDomain("typescript");
@@ -225,6 +229,7 @@ describe("NeuroclawDB", () => {
         half_life: 30,
         retention: 1.0,
         source_episode_ids: "",
+        tags: "",
       });
       db.insertSemantic({
         id: "sem-high",
@@ -239,6 +244,7 @@ describe("NeuroclawDB", () => {
         half_life: 30,
         retention: 1.0,
         source_episode_ids: "",
+        tags: "",
       });
 
       const all = db.getAllSemanticEntries();
@@ -261,6 +267,7 @@ describe("NeuroclawDB", () => {
         half_life: 30,
         retention: 1.0,
         source_episode_ids: "",
+        tags: "",
       });
 
       db.updateSemanticRetention("sem-decay", 0.6, 45);
@@ -285,6 +292,7 @@ describe("NeuroclawDB", () => {
         half_life: 30,
         retention: 1.0,
         source_episode_ids: "",
+        tags: "",
       });
 
       db.incrementSemanticRefCount("sem-ref");
@@ -292,6 +300,28 @@ describe("NeuroclawDB", () => {
       const entry = db.getSemantic("sem-ref");
       expect(entry!.ref_count).toBe(3);
       expect(entry!.last_accessed).toBeGreaterThanOrEqual(before);
+    });
+
+    it("stores and retrieves tags field", () => {
+      db.insertSemantic({
+        id: "sem-tags",
+        domain: "coding-preferences",
+        created: Date.now(),
+        last_accessed: Date.now(),
+        importance: 0.7,
+        ref_count: 0,
+        confidence: 0.8,
+        file_path: "semantic/domains/coding-preferences/sem-tags.md",
+        line_range: null,
+        half_life: 30,
+        retention: 1.0,
+        source_episode_ids: "",
+        tags: "migration,source:MEMORY.md",
+      });
+
+      const entry = db.getSemantic("sem-tags");
+      expect(entry).not.toBeNull();
+      expect(entry!.tags).toBe("migration,source:MEMORY.md");
     });
   });
 

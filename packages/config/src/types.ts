@@ -89,6 +89,7 @@ export interface SemanticRecord {
   half_life: number;          // days
   retention: number;          // 0.0-1.0
   source_episode_ids: string; // comma-separated episode IDs
+  tags: string;               // comma-separated, e.g. "migration,source:MEMORY.md"
 }
 
 export interface ProcedureRecord {

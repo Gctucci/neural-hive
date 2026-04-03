@@ -11,6 +11,11 @@ export interface RetrievedMemory {
   relevanceScore: number;
   source: string;
   created: string;
+  // Citation fields (populated from DB on retrieval)
+  sourceFile?: string;    // e.g. "MEMORY.md" extracted from tags
+  domain?: string;        // e.g. "coding-preferences"
+  createdAt?: number;     // raw ms timestamp
+  citationLabel?: string; // e.g. "MEMORY.md · coding-preferences · 3d ago"
 }
 
 const RELATIONAL_TERMS = [

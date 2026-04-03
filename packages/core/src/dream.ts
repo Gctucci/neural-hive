@@ -206,6 +206,7 @@ export class DreamCycle {
             half_life: halfLife,
             retention: 1.0,
             source_episode_ids: episode.id,
+            tags: "",
           };
 
           this.db.insertSemantic(semRecord);
@@ -251,6 +252,7 @@ export class DreamCycle {
         half_life: halfLife,
         retention: 1.0,
         source_episode_ids: episode.id,
+        tags: "",
       };
 
       this.db.insertSemantic(semRecord);

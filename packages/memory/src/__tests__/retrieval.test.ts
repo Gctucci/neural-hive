@@ -72,6 +72,7 @@ describe("RetrievalEngine", () => {
       half_life: 30,
       retention: 1.0,
       source_episode_ids: "",
+      tags: "",
     });
     db.indexContent(id, "semantic", "Authentication JWT tokens and OAuth2 flows.");
 
@@ -98,6 +99,7 @@ describe("RetrievalEngine", () => {
       half_life: 30,
       retention: 1.0,
       source_episode_ids: "",
+      tags: "",
     });
     db.insertSemantic({
       id: "sem-gw2",
@@ -112,6 +114,7 @@ describe("RetrievalEngine", () => {
       half_life: 30,
       retention: 1.0,
       source_episode_ids: "",
+      tags: "",
     });
 
     // Index them in FTS
