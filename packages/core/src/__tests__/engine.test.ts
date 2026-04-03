@@ -61,4 +61,33 @@ describe("NeuroclawEngine", () => {
     await engine.init();
     expect(engine.getGovernanceMode()).toBeDefined();
   });
+
+  it("captures an episode via captureEpisode facade", async () => {
+    await engine.init();
+    const record = await engine.captureEpisode({
+      sessionId: "sess-1",
+      project: "test",
+      interactionText: "Great work!",
+      summary: "User praised the implementation",
+      isCorrection: false,
+      outcomeSignal: 0.5,
+    });
+    expect(record.id).toMatch(/^ep-/);
+    expect(record.valence).toBeGreaterThan(0);
+  });
+
+  it("executes a dream cycle", async () => {
+    await engine.init();
+    await engine.captureEpisode({
+      sessionId: "sess-dream",
+      project: null,
+      interactionText: "This is a test interaction",
+      summary: "Test episode for dream cycle",
+      isCorrection: false,
+      outcomeSignal: 0.0,
+    });
+    const report = await engine.executeDream();
+    expect(report.episodesProcessed).toBe(1);
+    expect(report.consolidated).toBe(1);
+  });
 });

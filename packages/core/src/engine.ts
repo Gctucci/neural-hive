@@ -1,10 +1,15 @@
 import * as path from "node:path";
 import { loadConfig, resolveStorePath } from "@neuroclaw/config";
 import type { NeuroclawConfig } from "@neuroclaw/config";
+import type { EpisodeRecord, DreamReport } from "@neuroclaw/config";
 import { Vault, NeuroclawDB, WorkingMemory, RetrievalEngine } from "@neuroclaw/memory";
 import type { RetrievedMemory } from "@neuroclaw/memory";
+import { EpisodeCapture, LocalValenceScorer } from "@neuroclaw/memory";
+import type { CaptureInput } from "@neuroclaw/memory";
 import { GovernanceGate, AuditTrail, SecurityScanner } from "@neuroclaw/governance";
 import type { GovernanceMode } from "./types";
+import { DreamCycle } from "./dream";
+import { RuleBasedReasoner } from "./reasoner";
 
 export class NeuroclawEngine {
   private config: NeuroclawConfig;
@@ -16,6 +21,8 @@ export class NeuroclawEngine {
   private audit!: AuditTrail;
   private scanner!: SecurityScanner;
   private storePath!: string;
+  private capture!: EpisodeCapture;
+  private dreamCycle!: DreamCycle;
 
   constructor(configDir: string, agentId?: string) {
     this.config = loadConfig(configDir, agentId);
@@ -51,6 +58,15 @@ export class NeuroclawEngine {
     );
 
     this.scanner = new SecurityScanner(this.config.security);
+
+    const scorer = new LocalValenceScorer();
+    this.capture = new EpisodeCapture(this.db, this.vault, scorer);
+
+    const reasoner = new RuleBasedReasoner();
+    this.dreamCycle = new DreamCycle(
+      this.db, this.vault, this.config,
+      this.gate, this.audit, reasoner
+    );
   }
 
   search(query: string, limit = 10): RetrievedMemory[] {
@@ -79,6 +95,14 @@ export class NeuroclawEngine {
 
   getSecurityScanner(): SecurityScanner {
     return this.scanner;
+  }
+
+  async captureEpisode(input: CaptureInput): Promise<EpisodeRecord> {
+    return this.capture.capture(input);
+  }
+
+  async executeDream(): Promise<DreamReport> {
+    return this.dreamCycle.run();
   }
 
   close(): void {
