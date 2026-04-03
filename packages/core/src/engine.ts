@@ -39,8 +39,7 @@ export class NeuroclawEngine {
     this.vault.init();
 
     const dbPath = path.join(this.storePath, "index.db");
-    this.db = await NeuroclawDB.create(dbPath);
-    this.db.save();
+    this.db = NeuroclawDB.create(dbPath);
 
     this.workingMemory = new WorkingMemory(
       this.vault,

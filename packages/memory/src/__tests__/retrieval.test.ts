@@ -34,11 +34,11 @@ describe("RetrievalEngine", () => {
   let vault: Vault;
   let engine: RetrievalEngine;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "neuroclaw-retrieval-"));
     vault = new Vault(tmpDir);
     vault.init();
-    db = await NeuroclawDB.create(path.join(tmpDir, "index.db"));
+    db = NeuroclawDB.create(path.join(tmpDir, "index.db"));
     engine = new RetrievalEngine(db, vault);
   });
 

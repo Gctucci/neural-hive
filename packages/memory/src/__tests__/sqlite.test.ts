@@ -8,9 +8,9 @@ describe("NeuroclawDB", () => {
   let tmpDir: string;
   let db: NeuroclawDB;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "neuroclaw-db-"));
-    db = await NeuroclawDB.create(path.join(tmpDir, "index.db"));
+    db = NeuroclawDB.create(path.join(tmpDir, "index.db"));
   });
 
   afterEach(() => {
@@ -28,9 +28,9 @@ describe("NeuroclawDB", () => {
     expect(tables).toContain("chunks_fts");
   });
 
-  it("reports memory journal mode (sql.js runs in-memory)", () => {
+  it("reports WAL journal mode", () => {
     const mode = db.getJournalMode();
-    expect(mode).toBe("memory");
+    expect(mode).toBe("wal");
   });
 
   describe("episodes", () => {
@@ -416,13 +416,13 @@ describe("NeuroclawDB", () => {
   });
 
   describe("persistence", () => {
-    it("saves and reloads from disk", async () => {
+    it("saves and reloads from disk", () => {
       const dbPath = path.join(tmpDir, "persist.db");
-      const db1 = await NeuroclawDB.create(dbPath);
+      const db1 = NeuroclawDB.create(dbPath);
       db1.indexContent("x", "semantic", "persistence test content");
-      db1.close(); // saves to disk
+      db1.close();
 
-      const db2 = await NeuroclawDB.create(dbPath);
+      const db2 = NeuroclawDB.create(dbPath);
       const results = db2.searchFTS("persistence test");
       expect(results).toHaveLength(1);
       expect(results[0].source_id).toBe("x");

@@ -11,11 +11,11 @@
   "dependencies": {
     "@neuroclaw/config": "0.1.0",
     "@neuroclaw/governance": "0.1.0",
-    "crowd-sentiment": "^1.1.7",
-    "sql.js": "^1.14.1"
+    "better-sqlite3": "^12.8.0",
+    "crowd-sentiment": "^1.1.7"
   },
   "devDependencies": {
-    "@types/sql.js": "^1.4.11",
+    "@types/better-sqlite3": "^7.6.13",
     "typescript": "^5.7.0",
     "vitest": "^3.1.0"
   }

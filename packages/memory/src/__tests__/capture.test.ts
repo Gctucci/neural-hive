@@ -13,9 +13,9 @@ describe("EpisodeCapture", () => {
   let vault: Vault;
   let capture: EpisodeCapture;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "neuroclaw-capture-"));
-    db = await NeuroclawDB.create(path.join(tmpDir, "index.db"));
+    db = NeuroclawDB.create(path.join(tmpDir, "index.db"));
     vault = new Vault(tmpDir);
     vault.init();
     const scorer = new LocalValenceScorer();

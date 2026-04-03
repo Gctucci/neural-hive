@@ -19,7 +19,7 @@ let vault: Vault;
 let capture: EpisodeCapture;
 let dream: DreamCycle;
 
-async function setup() {
+function setup() {
   tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "dream-test-"));
   configDir = path.join(tmpDir, "config");
   fs.mkdirSync(configDir, { recursive: true });
@@ -34,7 +34,7 @@ async function setup() {
   const dbPath = path.join(tmpDir, "store", "neuroclaw.db");
   fs.mkdirSync(path.dirname(dbPath), { recursive: true });
 
-  db = await NeuroclawDB.create(dbPath);
+  db = NeuroclawDB.create(dbPath);
 
   const vaultRoot = path.join(tmpDir, "vault");
   vault = new Vault(vaultRoot);
@@ -65,8 +65,8 @@ function teardown() {
 // ---------------------------------------------------------------------------
 
 describe("DreamCycle", () => {
-  beforeEach(async () => {
-    await setup();
+  beforeEach(() => {
+    setup();
   });
 
   afterEach(() => {
@@ -141,7 +141,7 @@ describe("DreamCycle", () => {
 
     // Setup fresh for a real run
     teardown();
-    await setup();
+    setup();
 
     await capture.capture({
       sessionId: "s1",
