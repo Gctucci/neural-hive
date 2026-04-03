@@ -57,3 +57,60 @@ governance:
     expect(wm).toContain("Working Memory");
   });
 });
+
+describe("Phase 2 Integration", () => {
+  let tmpDir: string;
+  let configDir: string;
+  let storeDir: string;
+  let engine: NeuroclawEngine;
+
+  beforeEach(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "neuroclaw-p2-"));
+    configDir = path.join(tmpDir, "config");
+    storeDir = path.join(tmpDir, "store");
+    fs.mkdirSync(configDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(configDir, "base.yaml"),
+      `agent:\n  id: test-agent\n  store_path: ${storeDir}\n`
+    );
+    engine = new NeuroclawEngine(configDir);
+  });
+
+  afterEach(() => {
+    engine.close();
+    fs.rmSync(tmpDir, { recursive: true });
+  });
+
+  it("full cycle: capture episodes -> dream -> search retrieves consolidated knowledge", async () => {
+    await engine.init();
+
+    // Capture episodes
+    await engine.captureEpisode({
+      sessionId: "sess-int",
+      project: "my-app",
+      interactionText: "Working on src/auth/middleware.ts — session check was in wrong order",
+      summary: "Auth middleware must validate sessions before processing requests",
+      isCorrection: true,
+      outcomeSignal: -0.3,
+    });
+
+    await engine.captureEpisode({
+      sessionId: "sess-int",
+      project: "my-app",
+      interactionText: "Perfect, the auth flow is correct now",
+      summary: "Auth middleware session validation order confirmed working",
+      isCorrection: false,
+      outcomeSignal: 0.8,
+    });
+
+    // Run dream cycle
+    const report = await engine.executeDream();
+    expect(report.episodesProcessed).toBe(2);
+    expect(report.consolidated).toBe(2);
+    expect(report.healthScore).toBeGreaterThan(0);
+
+    // Search should find consolidated knowledge
+    const results = engine.search("auth middleware session");
+    expect(results.length).toBeGreaterThanOrEqual(1);
+  });
+});
