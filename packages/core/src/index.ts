@@ -10,3 +10,4 @@ export {
   type DistillationResult,
   type LLMCallFn,
 } from "./reasoner";
+export { DreamCycle } from "./dream";
