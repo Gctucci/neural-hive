@@ -233,6 +233,37 @@ export class NeuroclawDB {
     return this.db.prepare("SELECT * FROM relations WHERE target_id = ?").all(targetId) as RelationRecord[];
   }
 
+  incrementEdgeWeight(sourceId: string, targetId: string, relationType: string): void {
+    this.db
+      .prepare(
+        `UPDATE relations
+         SET weight = min(weight + 0.05, 2.0), last_used = ?
+         WHERE source_id = ? AND target_id = ? AND relation_type = ?`
+      )
+      .run(Date.now(), sourceId, targetId, relationType);
+  }
+
+  getStaleEdges(windowDays: number): RelationRecord[] {
+    const cutoff = Date.now() - windowDays * 86_400_000;
+    return this.db
+      .prepare("SELECT * FROM relations WHERE last_used < ?")
+      .all(cutoff) as RelationRecord[];
+  }
+
+  updateEdgeWeight(
+    sourceId: string,
+    targetId: string,
+    relationType: string,
+    weight: number
+  ): void {
+    this.db
+      .prepare(
+        `UPDATE relations SET weight = ?
+         WHERE source_id = ? AND target_id = ? AND relation_type = ?`
+      )
+      .run(weight, sourceId, targetId, relationType);
+  }
+
   // --- Hypotheses ---
 
   insertHypothesis(hyp: HypothesisRecord): void {

@@ -426,6 +426,64 @@ describe("NeuroclawDB", () => {
     });
   });
 
+  describe("GSEM edge methods", () => {
+    beforeEach(() => {
+      db.insertRelation({
+        source_id: "sem-a",
+        target_id: "sem-b",
+        relation_type: "supports",
+        weight: 1.0,
+        created: Date.now(),
+        last_used: Date.now() - 40 * 24 * 60 * 60 * 1000, // 40 days ago
+        provenance: "rule",
+        confidence: 1.0,
+      });
+    });
+
+    it("incrementEdgeWeight increases weight by 0.05", () => {
+      db.incrementEdgeWeight("sem-a", "sem-b", "supports");
+      const rels = db.getRelationsFrom("sem-a");
+      expect(rels[0].weight).toBeCloseTo(1.05, 5);
+    });
+
+    it("incrementEdgeWeight caps weight at 2.0", () => {
+      for (let i = 0; i < 25; i++) {
+        db.incrementEdgeWeight("sem-a", "sem-b", "supports");
+      }
+      const rels = db.getRelationsFrom("sem-a");
+      expect(rels[0].weight).toBe(2.0);
+    });
+
+    it("getStaleEdges returns edges not used within window", () => {
+      const stale = db.getStaleEdges(30); // 30-day window; edge is 40 days old
+      expect(stale).toHaveLength(1);
+      expect(stale[0].source_id).toBe("sem-a");
+    });
+
+    it("getStaleEdges excludes recent edges", () => {
+      db.insertRelation({
+        source_id: "sem-c",
+        target_id: "sem-d",
+        relation_type: "elaborates",
+        weight: 1.0,
+        created: Date.now(),
+        last_used: Date.now(), // just now
+        provenance: "rule",
+        confidence: 1.0,
+      });
+      const stale = db.getStaleEdges(30);
+      const ids = stale.map((r) => r.source_id);
+      expect(ids).toContain("sem-a");
+      expect(ids).not.toContain("sem-c");
+    });
+
+    it("updateEdgeWeight sets the exact weight", () => {
+      db.updateEdgeWeight("sem-a", "sem-b", "supports", 0.5);
+      const rels = db.getRelationsFrom("sem-a");
+      expect(rels[0].weight).toBe(0.5);
+    });
+  });
+
   describe("hypotheses", () => {
     it("inserts and updates hypothesis status", () => {
       db.insertHypothesis({
