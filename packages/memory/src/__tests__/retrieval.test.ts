@@ -34,11 +34,11 @@ describe("RetrievalEngine", () => {
   let vault: Vault;
   let engine: RetrievalEngine;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "neuroclaw-retrieval-"));
     vault = new Vault(tmpDir);
     vault.init();
-    db = await NeuroclawDB.create(path.join(tmpDir, "index.db"));
+    db = NeuroclawDB.create(path.join(tmpDir, "index.db"));
     engine = new RetrievalEngine(db, vault);
   });
 
@@ -69,6 +69,9 @@ describe("RetrievalEngine", () => {
       ref_count: 0,
       confidence: 0.9,
       line_range: null,
+      half_life: 30,
+      retention: 1.0,
+      source_episode_ids: "",
     });
     db.indexContent(id, "semantic", "Authentication JWT tokens and OAuth2 flows.");
 
@@ -76,5 +79,63 @@ describe("RetrievalEngine", () => {
     expect(results.length).toBeGreaterThan(0);
     expect(results[0].source).toBe("semantic/domains/auth.md");
     expect(results[0].content).toContain("Authentication");
+  });
+
+  it("discovers related entries via graph walk", () => {
+    const now = Date.now();
+
+    // Insert two semantic entries
+    db.insertSemantic({
+      id: "sem-gw1",
+      file_path: "semantic/domains/auth-gw.md",
+      importance: 0.8,
+      domain: "auth",
+      created: now,
+      last_accessed: now,
+      ref_count: 0,
+      confidence: 0.9,
+      line_range: null,
+      half_life: 30,
+      retention: 1.0,
+      source_episode_ids: "",
+    });
+    db.insertSemantic({
+      id: "sem-gw2",
+      file_path: "semantic/domains/security-gw.md",
+      importance: 0.7,
+      domain: "security",
+      created: now,
+      last_accessed: now,
+      ref_count: 0,
+      confidence: 0.9,
+      line_range: null,
+      half_life: 30,
+      retention: 1.0,
+      source_episode_ids: "",
+    });
+
+    // Index them in FTS
+    db.indexContent("sem-gw1", "semantic", "authentication session tokens OAuth2 login");
+    db.indexContent("sem-gw2", "semantic", "security CORS headers content policy");
+
+    // Write vault files
+    vault.write("semantic/domains/auth-gw.md", "# Auth\nSession tokens and OAuth2.");
+    vault.write("semantic/domains/security-gw.md", "# Security\nCORS and content security policy.");
+
+    // Insert a "requires" relation between them
+    db.insertRelation({
+      source_id: "sem-gw1",
+      target_id: "sem-gw2",
+      relation_type: "requires",
+      weight: 0.9,
+      created: now,
+      last_used: now,
+      provenance: "rule",
+      confidence: 0.9,
+    });
+
+    // Query triggers graph walk because of "relate"
+    const results = engine.search("how does authentication relate to security headers");
+    expect(results.length).toBeGreaterThanOrEqual(1);
   });
 });

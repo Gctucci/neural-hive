@@ -27,11 +27,12 @@ export const DEFAULT_CONFIG: NeuroclawConfig = {
       ],
       archive_policy: "keep_forever",
     },
+    valence: { scorer: "local", llm_provider: null },
   },
   retrieval: {
     strategy: "query_dependent",
     text: { engine: "fts5_bm25" },
-    graph: { enabled: true, algorithm: "pagerank", trigger: "auto" },
+    graph: { enabled: true, trigger: "auto" },
     embeddings: {
       enabled: false,
       provider: null,
@@ -51,6 +52,7 @@ export const DEFAULT_CONFIG: NeuroclawConfig = {
       probe_sample_size: 10,
       coherence_check: true,
     },
+    reasoner: { type: "rule", llm_provider: null },
   },
   self_model: {
     hypothesis: {
