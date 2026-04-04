@@ -41,7 +41,8 @@ const SCHEMA = `
     line_range TEXT,
     half_life REAL NOT NULL DEFAULT 30.0,
     retention REAL NOT NULL DEFAULT 1.0,
-    source_episode_ids TEXT NOT NULL DEFAULT ''
+    source_episode_ids TEXT NOT NULL DEFAULT '',
+    tags TEXT NOT NULL DEFAULT ''
   );
 
   CREATE TABLE IF NOT EXISTS procedures (
@@ -100,6 +101,11 @@ export class NeuroclawDB {
     const db = new Database(dbPath);
     db.pragma("journal_mode = WAL");
     db.exec(SCHEMA);
+    // Migrate existing DBs: add tags column if missing
+    const semanticCols = db.pragma("table_info(semantic)") as Array<{ name: string }>;
+    if (!semanticCols.some((c) => c.name === "tags")) {
+      db.exec("ALTER TABLE semantic ADD COLUMN tags TEXT NOT NULL DEFAULT ''");
+    }
     return new NeuroclawDB(db);
   }
 
@@ -160,13 +166,13 @@ export class NeuroclawDB {
   insertSemantic(entry: SemanticRecord): void {
     this.db
       .prepare(
-        `INSERT INTO semantic (id, domain, created, last_accessed, importance, ref_count, confidence, file_path, line_range, half_life, retention, source_episode_ids)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO semantic (id, domain, created, last_accessed, importance, ref_count, confidence, file_path, line_range, half_life, retention, source_episode_ids, tags)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .run(
         entry.id, entry.domain, entry.created, entry.last_accessed, entry.importance,
         entry.ref_count, entry.confidence, entry.file_path, entry.line_range,
-        entry.half_life, entry.retention, entry.source_episode_ids
+        entry.half_life, entry.retention, entry.source_episode_ids, entry.tags
       );
   }
 
@@ -225,6 +231,37 @@ export class NeuroclawDB {
 
   getRelationsTo(targetId: string): RelationRecord[] {
     return this.db.prepare("SELECT * FROM relations WHERE target_id = ?").all(targetId) as RelationRecord[];
+  }
+
+  incrementEdgeWeight(sourceId: string, targetId: string, relationType: string): void {
+    this.db
+      .prepare(
+        `UPDATE relations
+         SET weight = min(weight + 0.05, 2.0), last_used = ?
+         WHERE source_id = ? AND target_id = ? AND relation_type = ?`
+      )
+      .run(Date.now(), sourceId, targetId, relationType);
+  }
+
+  getStaleEdges(windowDays: number): RelationRecord[] {
+    const cutoff = Date.now() - windowDays * 86_400_000;
+    return this.db
+      .prepare("SELECT * FROM relations WHERE last_used < ?")
+      .all(cutoff) as RelationRecord[];
+  }
+
+  updateEdgeWeight(
+    sourceId: string,
+    targetId: string,
+    relationType: string,
+    weight: number
+  ): void {
+    this.db
+      .prepare(
+        `UPDATE relations SET weight = ?
+         WHERE source_id = ? AND target_id = ? AND relation_type = ?`
+      )
+      .run(weight, sourceId, targetId, relationType);
   }
 
   // --- Hypotheses ---

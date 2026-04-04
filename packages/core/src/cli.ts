@@ -97,5 +97,126 @@ export function createCLI(): Command {
       }
     });
 
+  // neuroclaw migrate
+  program
+    .command("migrate")
+    .description("Import OpenClaw MEMORY.md and memory/ files into NeuroClaw vault")
+    .requiredOption("--from <dir>", "OpenClaw project directory to migrate from")
+    .option("--config-dir <path>", "Config directory", getDefaultConfigDir())
+    .option("--agent <id>", "Agent ID")
+    .option("--dry-run", "Preview without writing", false)
+    .option("--scan", "Only scan and report files found, no import", false)
+    .action(async (opts) => {
+      try {
+        const engine = new NeuroclawEngine(opts.configDir, opts.agent);
+        await engine.init();
+
+        if (opts.scan) {
+          const fs2 = await import("node:fs");
+          const path2 = await import("node:path");
+          const memoryPath = path2.join(opts.from, "MEMORY.md");
+          const memoryDir = path2.join(opts.from, "memory");
+          console.log(`Scanning ${opts.from}:`);
+          if (fs2.existsSync(memoryPath)) {
+            console.log(`  MEMORY.md              → found`);
+          } else {
+            console.log(`  MEMORY.md              → not found`);
+          }
+          if (fs2.existsSync(memoryDir)) {
+            const dailyFiles = fs2
+              .readdirSync(memoryDir)
+              .filter((f: string) => /^\d{4}-\d{2}-\d{2}\.md$/.test(f));
+            console.log(`  memory/ daily files    → ${dailyFiles.length} found`);
+          } else {
+            console.log(`  memory/                → not found`);
+          }
+          engine.close();
+          return;
+        }
+
+        const report = await engine.migrateFromOpenClaw(opts.from, {
+          dryRun: opts.dryRun,
+        });
+
+        if (opts.dryRun) {
+          console.log(`Dry run — would import ${report.imported} entries from ${opts.from}`);
+          for (const entry of report.entries) {
+            console.log(`  [${entry.type}] ${entry.domain} — ${entry.sourceFile}`);
+          }
+        } else {
+          console.log(`Migrated ${report.imported} entries from ${opts.from}`);
+          const semantic = report.entries.filter((e) => e.type === "semantic").length;
+          const episodic = report.entries.filter((e) => e.type === "episodic").length;
+          if (semantic > 0) console.log(`  ${semantic} semantic  (MEMORY.md)`);
+          if (episodic > 0) console.log(`  ${episodic} episodic  (memory/)`);
+        }
+        engine.close();
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error(`Error: ${msg}`);
+        process.exit(1);
+      }
+    });
+
+  // neuroclaw ingest
+  program
+    .command("ingest <path>")
+    .description("Ingest a markdown file into NeuroClaw vault")
+    .option("--config-dir <path>", "Config directory", getDefaultConfigDir())
+    .option("--agent <id>", "Agent ID")
+    .option("--type <type>", "Memory type: semantic, procedural, episodic")
+    .option("--domain <domain>", "Domain tag")
+    .option("--dry-run", "Preview without writing", false)
+    .option("--recursive", "Ingest all .md files in directory recursively", false)
+    .action(async (filePath, opts) => {
+      try {
+        const engine = new NeuroclawEngine(opts.configDir, opts.agent);
+        await engine.init();
+
+        const fs2 = await import("node:fs");
+        const path2 = await import("node:path");
+
+        const targets: string[] = [];
+        if (opts.recursive && fs2.statSync(filePath).isDirectory()) {
+          const walk = (dir: string) => {
+            for (const f of fs2.readdirSync(dir)) {
+              const full = path2.join(dir, f);
+              if (fs2.statSync(full).isDirectory()) walk(full);
+              else if (f.endsWith(".md")) targets.push(full);
+            }
+          };
+          walk(filePath);
+        } else {
+          targets.push(filePath);
+        }
+
+        let totalImported = 0;
+        for (const target of targets) {
+          const result = await engine.ingestFile(target, {
+            type: opts.type as "semantic" | "procedural" | "episodic" | undefined,
+            domain: opts.domain,
+            dryRun: opts.dryRun,
+          });
+          totalImported += result.entries.length;
+          if (opts.dryRun) {
+            for (const e of result.entries) {
+              console.log(`  [dry-run] ${e.type}/${e.domain} — ${path2.basename(target)}`);
+            }
+          }
+        }
+
+        if (opts.dryRun) {
+          console.log(`Would import ${totalImported} entries.`);
+        } else {
+          console.log(`Ingested ${totalImported} entries.`);
+        }
+        engine.close();
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error(`Error: ${msg}`);
+        process.exit(1);
+      }
+    });
+
   return program;
 }

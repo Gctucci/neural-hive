@@ -64,6 +64,176 @@ function teardown() {
 // Tests
 // ---------------------------------------------------------------------------
 
+describe("DreamCycle forgetting safety nets", () => {
+  beforeEach(() => {
+    setup();
+  });
+
+  afterEach(() => {
+    teardown();
+  });
+
+  it("Tier 3: does not archive migration-tagged semantic entries", async () => {
+    const now = Date.now();
+    const veryOld = now - 200 * 24 * 60 * 60 * 1000; // 200 days ago
+    db.insertSemantic({
+      id: "sem-migration",
+      domain: "coding-preferences",
+      created: veryOld,
+      last_accessed: veryOld,
+      importance: 0.1,
+      ref_count: 0,
+      confidence: 0.5,
+      file_path: "semantic/domains/coding-preferences/sem-migration.md",
+      line_range: null,
+      half_life: 10,
+      retention: 0.01, // way below threshold
+      source_episode_ids: "",
+      tags: "migration,source:MEMORY.md",
+    });
+    vault.write(
+      "semantic/domains/coding-preferences/sem-migration.md",
+      "Important preference"
+    );
+
+    await capture.capture({
+      sessionId: "s1",
+      project: "test",
+      interactionText: "Something happened",
+      summary: "Work done",
+      isCorrection: false,
+      outcomeSignal: 0.5,
+    });
+    await dream.run();
+
+    const entry = db.getSemantic("sem-migration");
+    expect(entry).not.toBeNull();
+  });
+
+  it("Tier 3: does not archive entries in unforgettable_categories domains", async () => {
+    const now = Date.now();
+    const veryOld = now - 200 * 24 * 60 * 60 * 1000;
+    db.insertSemantic({
+      id: "sem-identity",
+      domain: "self_model", // unforgettable by default config
+      created: veryOld,
+      last_accessed: veryOld,
+      importance: 0.1,
+      ref_count: 0,
+      confidence: 0.5,
+      file_path: "semantic/domains/self_model/sem-identity.md",
+      line_range: null,
+      half_life: 10,
+      retention: 0.01,
+      source_episode_ids: "",
+      tags: "",
+    });
+    vault.write("semantic/domains/self_model/sem-identity.md", "Core identity trait");
+
+    await capture.capture({
+      sessionId: "s2",
+      project: "test",
+      interactionText: "Something happened",
+      summary: "Work done",
+      isCorrection: false,
+      outcomeSignal: 0.5,
+    });
+    await dream.run();
+
+    const entry = db.getSemantic("sem-identity");
+    expect(entry).not.toBeNull();
+  });
+
+  it("Tier 2: merges drop candidate into same-domain survivor before archiving", async () => {
+    const now = Date.now();
+    const veryOld = now - 200 * 24 * 60 * 60 * 1000;
+
+    db.insertSemantic({
+      id: "sem-survivor",
+      domain: "typescript",
+      created: now,
+      last_accessed: now,
+      importance: 0.8,
+      ref_count: 5,
+      confidence: 0.9,
+      file_path: "semantic/domains/typescript/sem-survivor.md",
+      line_range: null,
+      half_life: 30,
+      retention: 0.9,
+      source_episode_ids: "",
+      tags: "",
+    });
+    vault.write(
+      "semantic/domains/typescript/sem-survivor.md",
+      "TypeScript strict mode is preferred"
+    );
+    db.indexContent("sem-survivor", "semantic", "TypeScript strict mode preferred");
+
+    db.insertSemantic({
+      id: "sem-candidate",
+      domain: "typescript",
+      created: veryOld,
+      last_accessed: veryOld,
+      importance: 0.1,
+      ref_count: 0,
+      confidence: 0.5,
+      file_path: "semantic/domains/typescript/sem-candidate.md",
+      line_range: null,
+      half_life: 10,
+      retention: 0.01,
+      source_episode_ids: "",
+      tags: "",
+    });
+    vault.write(
+      "semantic/domains/typescript/sem-candidate.md",
+      "TypeScript types are useful"
+    );
+
+    await capture.capture({
+      sessionId: "s3",
+      project: "test",
+      interactionText: "TypeScript helps catch bugs",
+      summary: "TypeScript usage",
+      isCorrection: false,
+      outcomeSignal: 0.5,
+    });
+    await dream.run();
+
+    const survivorContent = vault.read("semantic/domains/typescript/sem-survivor.md");
+    expect(survivorContent).toContain("TypeScript types are useful");
+  });
+
+  it("GSEM: decays stale edge weights during dream cycle", async () => {
+    const staleTime = Date.now() - 40 * 24 * 60 * 60 * 1000; // 40 days ago
+    db.insertRelation({
+      source_id: "sem-x",
+      target_id: "sem-y",
+      relation_type: "supports",
+      weight: 1.0,
+      created: staleTime,
+      last_used: staleTime,
+      provenance: "rule",
+      confidence: 1.0,
+    });
+
+    await capture.capture({
+      sessionId: "s4",
+      project: "test",
+      interactionText: "Some work done",
+      summary: "Work summary",
+      isCorrection: false,
+      outcomeSignal: 0.5,
+    });
+    await dream.run();
+
+    const rels = db.getRelationsFrom("sem-x");
+    if (rels.length > 0) {
+      expect(rels[0].weight).toBeLessThan(1.0);
+      expect(rels[0].weight).toBeGreaterThanOrEqual(0.1);
+    }
+  });
+});
+
 describe("DreamCycle", () => {
   beforeEach(() => {
     setup();

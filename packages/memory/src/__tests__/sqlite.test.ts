@@ -142,6 +142,7 @@ describe("NeuroclawDB", () => {
         half_life: 30,
         retention: 1.0,
         source_episode_ids: "",
+        tags: "",
       });
 
       const entry = db.getSemantic("sem-001");
@@ -163,6 +164,7 @@ describe("NeuroclawDB", () => {
         half_life: 60,
         retention: 0.85,
         source_episode_ids: "ep-001,ep-002",
+        tags: "",
       });
 
       const entry = db.getSemantic("sem-002");
@@ -186,6 +188,7 @@ describe("NeuroclawDB", () => {
         half_life: 30,
         retention: 1.0,
         source_episode_ids: "",
+        tags: "",
       });
       db.insertSemantic({
         id: "sem-004",
@@ -200,6 +203,7 @@ describe("NeuroclawDB", () => {
         half_life: 30,
         retention: 1.0,
         source_episode_ids: "",
+        tags: "",
       });
 
       const tsEntries = db.getSemanticByDomain("typescript");
@@ -225,6 +229,7 @@ describe("NeuroclawDB", () => {
         half_life: 30,
         retention: 1.0,
         source_episode_ids: "",
+        tags: "",
       });
       db.insertSemantic({
         id: "sem-high",
@@ -239,6 +244,7 @@ describe("NeuroclawDB", () => {
         half_life: 30,
         retention: 1.0,
         source_episode_ids: "",
+        tags: "",
       });
 
       const all = db.getAllSemanticEntries();
@@ -261,6 +267,7 @@ describe("NeuroclawDB", () => {
         half_life: 30,
         retention: 1.0,
         source_episode_ids: "",
+        tags: "",
       });
 
       db.updateSemanticRetention("sem-decay", 0.6, 45);
@@ -285,6 +292,7 @@ describe("NeuroclawDB", () => {
         half_life: 30,
         retention: 1.0,
         source_episode_ids: "",
+        tags: "",
       });
 
       db.incrementSemanticRefCount("sem-ref");
@@ -292,6 +300,28 @@ describe("NeuroclawDB", () => {
       const entry = db.getSemantic("sem-ref");
       expect(entry!.ref_count).toBe(3);
       expect(entry!.last_accessed).toBeGreaterThanOrEqual(before);
+    });
+
+    it("stores and retrieves tags field", () => {
+      db.insertSemantic({
+        id: "sem-tags",
+        domain: "coding-preferences",
+        created: Date.now(),
+        last_accessed: Date.now(),
+        importance: 0.7,
+        ref_count: 0,
+        confidence: 0.8,
+        file_path: "semantic/domains/coding-preferences/sem-tags.md",
+        line_range: null,
+        half_life: 30,
+        retention: 1.0,
+        source_episode_ids: "",
+        tags: "migration,source:MEMORY.md",
+      });
+
+      const entry = db.getSemantic("sem-tags");
+      expect(entry).not.toBeNull();
+      expect(entry!.tags).toBe("migration,source:MEMORY.md");
     });
   });
 
@@ -393,6 +423,64 @@ describe("NeuroclawDB", () => {
       const toD = db.getRelationsTo("sem-d");
       expect(toD).toHaveLength(1);
       expect(toD[0].source_id).toBe("sem-a");
+    });
+  });
+
+  describe("GSEM edge methods", () => {
+    beforeEach(() => {
+      db.insertRelation({
+        source_id: "sem-a",
+        target_id: "sem-b",
+        relation_type: "supports",
+        weight: 1.0,
+        created: Date.now(),
+        last_used: Date.now() - 40 * 24 * 60 * 60 * 1000, // 40 days ago
+        provenance: "rule",
+        confidence: 1.0,
+      });
+    });
+
+    it("incrementEdgeWeight increases weight by 0.05", () => {
+      db.incrementEdgeWeight("sem-a", "sem-b", "supports");
+      const rels = db.getRelationsFrom("sem-a");
+      expect(rels[0].weight).toBeCloseTo(1.05, 5);
+    });
+
+    it("incrementEdgeWeight caps weight at 2.0", () => {
+      for (let i = 0; i < 25; i++) {
+        db.incrementEdgeWeight("sem-a", "sem-b", "supports");
+      }
+      const rels = db.getRelationsFrom("sem-a");
+      expect(rels[0].weight).toBe(2.0);
+    });
+
+    it("getStaleEdges returns edges not used within window", () => {
+      const stale = db.getStaleEdges(30); // 30-day window; edge is 40 days old
+      expect(stale).toHaveLength(1);
+      expect(stale[0].source_id).toBe("sem-a");
+    });
+
+    it("getStaleEdges excludes recent edges", () => {
+      db.insertRelation({
+        source_id: "sem-c",
+        target_id: "sem-d",
+        relation_type: "elaborates",
+        weight: 1.0,
+        created: Date.now(),
+        last_used: Date.now(), // just now
+        provenance: "rule",
+        confidence: 1.0,
+      });
+      const stale = db.getStaleEdges(30);
+      const ids = stale.map((r) => r.source_id);
+      expect(ids).toContain("sem-a");
+      expect(ids).not.toContain("sem-c");
+    });
+
+    it("updateEdgeWeight sets the exact weight", () => {
+      db.updateEdgeWeight("sem-a", "sem-b", "supports", 0.5);
+      const rels = db.getRelationsFrom("sem-a");
+      expect(rels[0].weight).toBe(0.5);
     });
   });
 
